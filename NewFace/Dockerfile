@@ -2,17 +2,15 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /source
 
-# copy csproj and restore as distinct layers
-#COPY *.sln .
-COPY aspnetapp/*.csproj ./aspnetapp/
+# Copy the project file and restore dependencies
+COPY NewFace.csproj .
 RUN dotnet restore
 
-# copy everything else and build app
-COPY aspnetapp/. ./aspnetapp/
-WORKDIR /source/aspnetapp
-RUN dotnet publish -c release -o /app --no-restore
+# Copy all the source files and build the application
+COPY . .
+RUN dotnet publish -c Release -o /app --no-restore
 
-# final stage/image
+# Final stage/image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 COPY --from=build /app ./
