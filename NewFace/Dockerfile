@@ -1,22 +1,19 @@
-# Build stage
+# https://hub.docker.com/_/microsoft-dotnet
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /app
+WORKDIR /source
 
-# Copy and restore project files
-COPY *.csproj ./
+# copy csproj and restore as distinct layers
+COPY *.sln .
+COPY aspnetapp/*.csproj ./aspnetapp/
 RUN dotnet restore
 
-# Copy the remaining files and build the project
-COPY . ./
-RUN dotnet publish -c Release -o /app/out
+# copy everything else and build app
+COPY aspnetapp/. ./aspnetapp/
+WORKDIR /source/aspnetapp
+RUN dotnet publish -c release -o /app --no-restore
 
-# Runtime stage
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+# final stage/image
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
-COPY --from=build /app/out ./
-
-# Expose necessary ports
-EXPOSE 80
-
-# Set the entry point
+COPY --from=build /app ./
 ENTRYPOINT ["dotnet", "NewFace.dll"]
