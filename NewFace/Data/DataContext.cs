@@ -1,4 +1,6 @@
-﻿namespace NewFace.Data;
+﻿using NewFace.Models;
+
+namespace NewFace.Data;
 
 public class DataContext : DbContext
 {
@@ -7,6 +9,8 @@ public class DataContext : DbContext
 
     }
 
-    //public DbSet<User> Users { get; set; }
+    public DbSet<User> Users { get; set; }
+    public DbSet<Term> Terms { get; set; }
+    public DbSet<SystemLog> SystemLogs { get; set; }
 
 }

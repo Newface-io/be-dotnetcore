@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using NewFace.Data;
+using NewFace.Common.Constants;
+using NewFace.DTOs.Auth;
+using NewFace.Services;
 
 namespace NewFace.Controllers
 {
@@ -8,12 +10,56 @@ namespace NewFace.Controllers
     public class AuthController : ControllerBase
     {
 
-        private readonly DataContext _context;
+        private readonly IAuthService _authService;
 
-        public AuthController(DataContext context)
+        public AuthController(IAuthService authService)
         {
-            _context = context;
+            _authService = authService;
         }
+
+
+        [HttpPost]
+        [Route("login")]
+        public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var response = await _authService.Login(request);
+
+            if (!response.Success)
+            {
+                if (response.Code == MessageCode.Custom.NOT_FOUND_USER.ToString())
+                {
+                    return NotFound(response);
+                }
+                return StatusCode(500, response);
+            }
+
+            return Ok(response);
+        }
+
+        [HttpPost]
+        [Route("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterRequestDto request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var response = await _authService.Register(request);
+
+            if (!response.Success)
+            {
+                return StatusCode(500, response);
+            }
+
+            return Ok(response);
+        }
+
 
     }
 }
