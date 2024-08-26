@@ -35,5 +35,24 @@ namespace NewFace.Controllers
 
             return Ok(response);
         }
+
+        [HttpPost]
+        [Route("setUserRole")]
+        public async Task<IActionResult> SetUserRole(int userId, string role)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var response = await _userService.SetUserRole(userId, role);
+
+            if (!response.Success)
+            {
+                return StatusCode(500, response);
+            }
+
+            return Ok(response);
+        }
     }
 }

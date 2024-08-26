@@ -144,11 +144,16 @@ public class AuthService : IAuthService
             // 3. Generate JWT token
             var token = GenerateJwtToken(user);
 
+            // 4. get role
+            var userRole = await _context.UserRole
+                    .FirstOrDefaultAsync(u => u.UserId == user.Id);
+
             response.Data = new SignInResponseDto()
             {
                 id = user.Id,
                 Email = user.Email,
-                token = token
+                token = token,
+                role = userRole?.ToString() ?? string.Empty
             };
 
             return response;
