@@ -124,6 +124,12 @@ public class AuthService : IAuthService
                 response.Message = MessageCode.CustomMessages[MessageCode.Custom.NOT_REGISTERED_USER];
 
                 return response;
+            } else if (user.isDeleted)
+            {
+                response.Success = false;
+                response.Data = null;
+                response.Code = MessageCode.Custom.DELETED_USER.ToString();
+                response.Message = MessageCode.CustomMessages[MessageCode.Custom.DELETED_USER];
             }
 
             // 2. check password
