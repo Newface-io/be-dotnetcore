@@ -33,6 +33,10 @@ builder.Services.AddDbContext<DataContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
 
+// Redis
+builder.Services.AddStackExchangeRedisCache(option =>
+    option.Configuration = builder.Configuration.GetConnectionString("Cache"));
+
 // JWT setting
 string? secretKey = builder.Configuration["Jwt:SecretKey"]; // Nullable string
 if (string.IsNullOrEmpty(secretKey))
@@ -60,7 +64,7 @@ builder.Services.AddAuthentication(options =>
 
 var app = builder.Build();
 
-//DatabaseManagementService.MigrationInitialisation(app);
+DatabaseManagementService.MigrationInitialisation(app);
 
 // Configure the HTTP request pipeline.
 //if (app.Environment.IsDevelopment())

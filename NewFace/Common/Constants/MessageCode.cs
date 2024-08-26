@@ -39,7 +39,7 @@ public static class MessageCode
         { Custom.NOT_FOUND_USER, "사용자 정보를 찾을 수 없습니다." },
         { Custom.INVALID_MOBILE_NUMBER, "유효하지 않은 전화 번호 입니다." },
         { Custom.SMS_SEND_FAILED, "SMS 전송에 실패 했습니다." },
-        { Custom.OTP_NOT_FOUND, "OTP Code가 존재하지 않습니다." },
+        { Custom.OTP_NOT_FOUND, "OTP Code가 만료되었거나 존재하지 않습니다." },
         { Custom.OTP_MISMATCH, "OTP Code가 틀립니다." },
         { Custom.NOT_AUTH_MOBILE, "OTP 인증이 되어 있지 않은 상태입니다" },
         { Custom.UNKNOWN_ERROR, "알수 없는 에러 입니다. 관리자에게 문의하세요." }

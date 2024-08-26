@@ -1,4 +1,5 @@
 ﻿using Azure.Core;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.IdentityModel.Tokens;
 using NewFace.Common.Constants;
 using NewFace.Data;
@@ -10,6 +11,8 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using Twilio;
+using Twilio.Rest.Api.V2010.Account;
 
 namespace NewFace.Services;
 
@@ -18,12 +21,14 @@ public class AuthService : IAuthService
     private readonly DataContext _context;
     private readonly IConfiguration _configuration;
     private readonly ILogService _logService;
+    private readonly IDistributedCache _cache;
 
-    public AuthService(DataContext context, IConfiguration configuration, ILogService logService)
+    public AuthService(DataContext context, IConfiguration configuration, ILogService logService, IDistributedCache cache)
     {
         _context = context;
         _logService = logService;
         _configuration = configuration;
+        _cache = cache;
     }
 
     public async Task<ServiceResponse<int>> Register(RegisterRequestDto request)
@@ -91,14 +96,14 @@ public class AuthService : IAuthService
         }
         catch (Exception ex)
         {
-            await transaction.RollbackAsync(); // 오류 발생 시 롤백
+            await transaction.RollbackAsync();
 
             response.Success = false;
             response.Data = 0;
             response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
             response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
 
-            _logService.LogError(string.Empty, ex.Message, "ip: ");
+            _logService.LogError("EXCEPTION", ex.Message, "ip: ");
 
             return response;
         }
@@ -152,7 +157,7 @@ public class AuthService : IAuthService
             response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
             response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
 
-            _logService.LogError(string.Empty, ex.Message, "ip: ");
+            _logService.LogError("EXCEPTION", ex.Message, "ip: ");
 
             return response;
         }
@@ -216,4 +221,117 @@ public class AuthService : IAuthService
         return tokenHandler.WriteToken(token);
     }
 
+    public async Task<ServiceResponse<int>> SendOTP(int userId, string phone)
+    {
+        var response = new ServiceResponse<int>();
+
+        try
+        {
+            string accountSid = _configuration["Redis:AccountSid"];
+            string authToken = _configuration["Redis:AuthToken"];
+
+            TwilioClient.Init(accountSid, authToken);
+
+            Random random = new Random();
+            string otp = random.Next(100000, 999999).ToString("D6");
+
+            var message = MessageResource.Create(
+                body: "NewFace 휴대폰 인증번호는 " + otp,
+                from: new Twilio.Types.PhoneNumber("+17204427345"),
+                to: new Twilio.Types.PhoneNumber("+821059601017")
+            );
+
+            if (message.Status == MessageResource.StatusEnum.Queued ||
+                message.Status == MessageResource.StatusEnum.Sent ||
+                message.Status == MessageResource.StatusEnum.Delivered)
+            {
+                // save OTP on Redis
+                string cacheKey = $"OTP:{userId}";
+                await _cache.SetStringAsync(cacheKey, otp, new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1)
+                });
+
+                response.Data = userId;
+                response.Success = true;
+
+                return response;
+            }
+            else
+            {
+                response.Success = false;
+                response.Data = 0;
+                response.Code = MessageCode.Custom.SMS_SEND_FAILED.ToString();
+                response.Message = MessageCode.CustomMessages[MessageCode.Custom.SMS_SEND_FAILED];
+
+                return response;
+
+            }
+
+        }
+        catch (Exception ex)
+        {
+            response.Success = false;
+            response.Data = 0;
+            response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
+            response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
+
+            _logService.LogError("EXCEPTION", ex.Message, "ip: ");
+
+            return response;
+        }
+    }
+
+
+    public async Task<ServiceResponse<int>> VerifyOTP(int userId, string inputOTP)
+    {
+        var response = new ServiceResponse<int>();
+
+        try
+        {
+            string cacheKey = $"OTP:{userId}";
+            string storedOTP = await _cache.GetStringAsync(cacheKey);
+
+            if (string.IsNullOrEmpty(storedOTP))
+            {
+                response.Success = false;
+                response.Data = 0;
+                response.Code = MessageCode.Custom.OTP_NOT_FOUND.ToString();
+                response.Message = MessageCode.CustomMessages[MessageCode.Custom.OTP_NOT_FOUND];
+
+                return response;
+            }
+
+            if (inputOTP == storedOTP)
+            {
+                await _cache.RemoveAsync(cacheKey);
+
+                response.Data = userId;
+                response.Success = true;
+
+                return response;
+            }
+            else
+            {
+                response.Success = false;
+                response.Data = 0;
+                response.Code = MessageCode.Custom.OTP_MISMATCH.ToString();
+                response.Message = MessageCode.CustomMessages[MessageCode.Custom.OTP_MISMATCH];
+
+                return response;
+            }
+
+        }
+        catch (Exception ex)
+        {
+            response.Success = false;
+            response.Data = 0;
+            response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
+            response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
+
+            _logService.LogError("EXCEPTION", ex.Message, "ip: ");
+
+            return response;
+        }
+    }
 }
