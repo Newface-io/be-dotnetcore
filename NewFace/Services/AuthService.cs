@@ -229,16 +229,19 @@ public class AuthService : IAuthService
         {
             string accountSid = _configuration["Redis:AccountSid"];
             string authToken = _configuration["Redis:AuthToken"];
+            string sendNumber = _configuration["Redis:SendNumber"];
 
             TwilioClient.Init(accountSid, authToken);
+
+            phone = Helpers.Common.FormatPhoneNumber(phone);
 
             Random random = new Random();
             string otp = random.Next(100000, 999999).ToString("D6");
 
             var message = MessageResource.Create(
-                body: "NewFace 휴대폰 인증번호는 " + otp,
-                from: new Twilio.Types.PhoneNumber("+17204427345"),
-                to: new Twilio.Types.PhoneNumber("+821059601017")
+                body: "[NewFace] 인증번호는 " + otp + " 입니다.",
+                from: new Twilio.Types.PhoneNumber(sendNumber),
+                to: new Twilio.Types.PhoneNumber(phone)
             );
 
             if (message.Status == MessageResource.StatusEnum.Queued ||
@@ -334,4 +337,6 @@ public class AuthService : IAuthService
             return response;
         }
     }
+
+
 }
