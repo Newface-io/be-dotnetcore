@@ -2,7 +2,7 @@
 
 namespace NewFace.DTOs.Auth;
 
-public class LoginResponseDto
+public class SignInResponseDto
 {
     public int id { get; set; }
     public string Email { get; set; } = string.Empty;

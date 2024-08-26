@@ -2,7 +2,7 @@
 
 namespace NewFace.DTOs.Auth;
 
-public class LoginRequestDto
+public class SignInRequestDto
 {
     [Required(ErrorMessage = "Email is required.")]
     [EmailAddress(ErrorMessage = "Invalid email format.")]

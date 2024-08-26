@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace NewFace.DTOs.Auth;
 
-public class RegisterRequestDto
+public class SignUpRequestDto
 {
 
     [Required(ErrorMessage = "Name is required.")]

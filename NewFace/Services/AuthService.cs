@@ -31,7 +31,7 @@ public class AuthService : IAuthService
         _cache = cache;
     }
 
-    public async Task<ServiceResponse<int>> Register(RegisterRequestDto request)
+    public async Task<ServiceResponse<int>> SignUp(SignUpRequestDto request)
     {
         var response = new ServiceResponse<int>();
 
@@ -39,7 +39,6 @@ public class AuthService : IAuthService
 
         try
         {
-            // 이메일 중복 확인
             if (await _context.Users.AnyAsync(u => u.Email == request.Email))
             {
                 response.Success = false;
@@ -50,10 +49,8 @@ public class AuthService : IAuthService
                 return response;
             }
 
-            // 비밀번호 해시화
             var passwordHash = CreateHashPassword(request.Password);
 
-            // 새로운 사용자 생성
             var user = new User
             {
                 Name = request.Name,
@@ -69,9 +66,9 @@ public class AuthService : IAuthService
                 _context.Users.Add(user);
             }
 
-            await _context.SaveChangesAsync(); // 사용자 저장
+            await _context.SaveChangesAsync();
 
-            // 약관 동의 저장
+            // 
             foreach (var termDto in request.TermsAgreements)
             {
                 var term = new Term
@@ -85,9 +82,9 @@ public class AuthService : IAuthService
                 _context.Terms.Add(term);
             }
 
-            await _context.SaveChangesAsync(); // 약관 저장
+            await _context.SaveChangesAsync(); 
 
-            await transaction.CommitAsync(); // 트랜잭션 커밋
+            await transaction.CommitAsync();
 
             response.Data = user.Id;
             response.Success = true;
@@ -109,9 +106,9 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task<ServiceResponse<LoginResponseDto>> Login(LoginRequestDto request)
+    public async Task<ServiceResponse<SignInResponseDto>> SignIn(SignInRequestDto request)
     {
-        var response = new ServiceResponse<LoginResponseDto>();
+        var response = new ServiceResponse<SignInResponseDto>();
 
         try
         {
@@ -141,7 +138,7 @@ public class AuthService : IAuthService
             // 3. Generate JWT token
             var token = GenerateJwtToken(user);
 
-            response.Data = new LoginResponseDto()
+            response.Data = new SignInResponseDto()
             {
                 id = user.Id,
                 Email = user.Email,

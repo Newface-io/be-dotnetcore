@@ -6,8 +6,8 @@ namespace NewFace.Services;
 
 public interface IAuthService
 {
-    Task<ServiceResponse<int>> Register(RegisterRequestDto request);
-    Task<ServiceResponse<LoginResponseDto>> Login(LoginRequestDto request);
+    Task<ServiceResponse<int>> SignUp(SignUpRequestDto request);
+    Task<ServiceResponse<SignInResponseDto>> SignIn(SignInRequestDto request);
     string CreateHashPassword(string password);
     bool VerifyPassword(string enteredPassword, string storedHash);
     string GenerateJwtToken(User user);

@@ -18,15 +18,15 @@ namespace NewFace.Controllers
 
 
         [HttpPost]
-        [Route("login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
+        [Route("signin")]
+        public async Task<IActionResult> SignIn([FromBody] SignInRequestDto request)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var response = await _authService.Login(request);
+            var response = await _authService.SignIn(request);
 
             if (!response.Success)
             {
@@ -41,15 +41,15 @@ namespace NewFace.Controllers
         }
 
         [HttpPost]
-        [Route("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterRequestDto request)
+        [Route("signup")]
+        public async Task<IActionResult> SignUp([FromBody] SignUpRequestDto request)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var response = await _authService.Register(request);
+            var response = await _authService.SignUp(request);
 
             if (!response.Success)
             {
