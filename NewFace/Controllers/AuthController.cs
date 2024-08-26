@@ -2,6 +2,8 @@
 using NewFace.Common.Constants;
 using NewFace.DTOs.Auth;
 using NewFace.Services;
+using Twilio;
+using Twilio.Rest.Api.V2010.Account;
 
 namespace NewFace.Controllers
 {
@@ -60,6 +62,47 @@ namespace NewFace.Controllers
             return Ok(response);
         }
 
+        [HttpPost]
+        [Route("sendOTP")]
+        public async Task<IActionResult> SendOTP(string phone)
+        {
+            string accountSid = "ACef2c092db25101119d8c411863a4471a";
+            string authToken = "69303da4b63a3a9a9c5466e5332bf0d8";
+
+            TwilioClient.Init(accountSid, authToken);
+
+            Random random = new Random();
+            string otp = random.Next(100000, 999999).ToString("D6");
+
+            var message = MessageResource.Create(
+                body: "NewFace 휴대폰 인증번호는 " + otp,
+                from: new Twilio.Types.PhoneNumber("+17204427345"),
+                to: new Twilio.Types.PhoneNumber("+821059601017")
+            );
+
+            if (message.Status == MessageResource.StatusEnum.Queued ||
+                message.Status == MessageResource.StatusEnum.Sent ||
+                message.Status == MessageResource.StatusEnum.Delivered)
+            {
+                return Ok(new 
+                {
+                    message = "SMS sent successfully",
+                    sid = message.Sid,
+                    status = message.Status.ToString()
+                });
+            }
+            else
+            {
+                return StatusCode(500, new
+                {
+                    error = "SMS sending failed",
+                    status = message.Status.ToString(),
+                    errorMessage = message.ErrorMessage
+                });
+            }
+
+        }
 
     }
+
 }

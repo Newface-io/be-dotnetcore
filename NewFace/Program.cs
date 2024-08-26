@@ -60,7 +60,7 @@ builder.Services.AddAuthentication(options =>
 
 var app = builder.Build();
 
-DatabaseManagementService.MigrationInitialisation(app);
+//DatabaseManagementService.MigrationInitialisation(app);
 
 // Configure the HTTP request pipeline.
 //if (app.Environment.IsDevelopment())
