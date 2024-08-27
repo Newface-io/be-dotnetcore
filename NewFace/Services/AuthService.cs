@@ -113,7 +113,8 @@ public class AuthService : IAuthService
         try
         {
             var user = await _context.Users
-                                .FirstOrDefaultAsync(u => u.Email == request.Email);
+                            .Include(u => u.UserRoles)
+                            .FirstOrDefaultAsync(u => u.Email == request.Email);
 
             // 1. check email
             if (user == null)
@@ -124,12 +125,14 @@ public class AuthService : IAuthService
                 response.Message = MessageCode.CustomMessages[MessageCode.Custom.NOT_REGISTERED_USER];
 
                 return response;
-            } else if (user.isDeleted)
+            } else if (user.IsDeleted)
             {
                 response.Success = false;
                 response.Data = null;
                 response.Code = MessageCode.Custom.DELETED_USER.ToString();
                 response.Message = MessageCode.CustomMessages[MessageCode.Custom.DELETED_USER];
+
+                return response;
             }
 
             // 2. check password
@@ -139,21 +142,22 @@ public class AuthService : IAuthService
                 response.Data = null;
                 response.Code = MessageCode.Custom.NOT_FOUND_USER.ToString();
                 response.Message = MessageCode.CustomMessages[MessageCode.Custom.NOT_FOUND_USER];
+
+                return response;
             }
 
             // 3. Generate JWT token
             var token = GenerateJwtToken(user);
 
             // 4. get role
-            var userRole = await _context.UserRole
-                    .FirstOrDefaultAsync(u => u.UserId == user.Id);
+            var userRole = user.UserRoles.FirstOrDefault()?.Role ?? string.Empty;
 
             response.Data = new SignInResponseDto()
             {
                 id = user.Id,
                 Email = user.Email,
                 token = token,
-                role = userRole?.ToString() ?? string.Empty
+                role = userRole
             };
 
             return response;

@@ -11,9 +11,12 @@ public class Term
 
     [Required]
     public int UserId { get; set; }
+
     [Required]
     public int Code { get; set; }
+
     [Required]
+    [StringLength(100)]
     public string Name { get; set; } = string.Empty;
 
     [Required]
@@ -22,7 +25,6 @@ public class Term
     [Required]
     public DateTime LastUpdated { get; set; } = DateTime.Now;
 
-    // User와의 관계 설정 (Foreign Key)
     [ForeignKey("UserId")]
     public User User { get; set; }
 }

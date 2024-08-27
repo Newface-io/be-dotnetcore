@@ -27,9 +27,10 @@ public class User
 
     public DateTime CreatedDate { get; set; } = DateTime.Now;
     public DateTime LastUpdated { get; set; } = DateTime.Now;
-    public bool isDeleted { get; set; } = false;
+    public bool IsDeleted { get; set; } = false;
 
-    [Required]
-    public ICollection<Term> TermsAgreements { get; set; } = new HashSet<Term>();
+    public virtual ICollection<Term> TermsAgreements { get; set; } = new HashSet<Term>();
+    public virtual ICollection<UserRole> UserRoles { get; set; } = new HashSet<UserRole>();
+    public virtual ICollection<UserFile> UserFiles { get; set; } = new HashSet<UserFile>();
 
 }

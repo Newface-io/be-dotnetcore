@@ -34,7 +34,7 @@ public class UserService : IUserService
                 return response;
             }
 
-            user.isDeleted = true;
+            user.IsDeleted = true;
 
             await _context.SaveChangesAsync();
 

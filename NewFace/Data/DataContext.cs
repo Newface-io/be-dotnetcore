@@ -11,6 +11,7 @@ public class DataContext : DbContext
 
     public DbSet<User> Users { get; set; }
     public DbSet<UserRole> UserRole { get; set; }
+    public DbSet<UserFile> UserFile { get; set; }
     public DbSet<Term> Terms { get; set; }
     public DbSet<SystemLog> SystemLogs { get; set; }
 
