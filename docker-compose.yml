@@ -11,10 +11,10 @@ services:
       - "8080:8080"
     depends_on:
       - newface.database
-  
     environment:
       - ConnectionStrings__DefaultConnection=Server=newface.database;Database=NewFace;User Id=sa;Password=${SA_PASSWORD:-YourStrong@Passw0rd1};TrustServerCertificate=True;Encrypt=False;
-
+    volumes:
+      - ./uploads:/app/uploads
   newface.database:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: newface.database

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using NewFace.Data;
 using NewFace.Services;
@@ -25,6 +26,8 @@ builder.Services.AddCors(options =>
 
 // Register services
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<ILogService, LogService>();
 
 // DBContext
@@ -79,6 +82,15 @@ app.UseSwaggerUI();
 app.UseHttpsRedirection();
 
 app.UseCors("CorsPolicy");
+
+// upload image
+app.UseStaticFiles(); // default wwwroot folder
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(Directory.GetCurrentDirectory(), "uploads")),
+    RequestPath = "/uploads"
+});
 
 app.UseAuthentication();
 app.UseAuthorization();
