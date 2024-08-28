@@ -27,6 +27,7 @@ builder.Services.AddCors(options =>
 // Register services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IActorService, ActorService>();
 builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<ILogService, LogService>();
 

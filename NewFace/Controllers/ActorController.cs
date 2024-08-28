@@ -1,32 +1,30 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using NewFace.Models.Actor;
 using NewFace.Services;
 
 namespace NewFace.Controllers
 {
-    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
-    public class UserController : ControllerBase
+    public class ActorController : ControllerBase
     {
-
-        private readonly IUserService _userService;
-        public UserController(IUserService userService)
+        private readonly IActorService _actorService;
+        public ActorController(IActorService actorService)
         {
-            _userService = userService;
+            _actorService = actorService;
         }
 
-        // DELETE: api/user
-        [HttpDelete]
-        public async Task<IActionResult> DeleteUser(int userId)
+        // POST: api/actor/profile
+        [HttpPost("profile")]
+        public async Task<IActionResult> AddPostActorProfile([FromBody] Actor model)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var response = await _userService.DeleteUser(userId);
+            var response = await _actorService.AddActorProfile(model);
 
             if (!response.Success)
             {
@@ -36,16 +34,16 @@ namespace NewFace.Controllers
             return Ok(response);
         }
 
-        [HttpPost]
-        [Route("setUserRole")]
-        public async Task<IActionResult> SetUserRole(int userId, string role)
+        // PUT: api/actor/profile
+        [HttpPut("profile")]
+        public async Task<IActionResult> UpdateActorProfile([FromBody] Actor model)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var response = await _userService.SetUserRole(userId, role);
+            var response = await _actorService.UpdateActorProfile(model);
 
             if (!response.Success)
             {
@@ -54,5 +52,6 @@ namespace NewFace.Controllers
 
             return Ok(response);
         }
+
     }
 }
