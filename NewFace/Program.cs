@@ -41,7 +41,7 @@ builder.Services.AddStackExchangeRedisCache(option =>
     option.Configuration = builder.Configuration.GetConnectionString("Cache"));
 
 // JWT setting
-string? secretKey = builder.Configuration["Jwt:SecretKey"]; // Nullable string
+string? secretKey = builder.Configuration["Jwt:SecretKey"];
 if (string.IsNullOrEmpty(secretKey))
 {
     throw new InvalidOperationException("JWT Secret Key is not configured.");

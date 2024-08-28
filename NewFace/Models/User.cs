@@ -32,5 +32,7 @@ public class User
     public virtual ICollection<Term> TermsAgreements { get; set; } = new HashSet<Term>();
     public virtual ICollection<UserRole> UserRoles { get; set; } = new HashSet<UserRole>();
     public virtual ICollection<UserFile> UserFiles { get; set; } = new HashSet<UserFile>();
+    public virtual Models.Actor.Actor Actor { get; set; } = new Actor.Actor();
+    public virtual Models.Entertainment.Entertainment EntertainmentProfessional { get; set; } = new Entertainment.Entertainment();
 
 }

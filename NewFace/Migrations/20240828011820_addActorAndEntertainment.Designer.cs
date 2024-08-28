@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NewFace.Data;
 
@@ -11,9 +12,11 @@ using NewFace.Data;
 namespace NewFace.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20240828011820_addActorAndEntertainment")]
+    partial class addActorAndEntertainment
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -55,7 +58,7 @@ namespace NewFace.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("Actors", (string)null);
+                    b.ToTable("Actors");
                 });
 
             modelBuilder.Entity("NewFace.Models.Actor.ActorEducation", b =>
@@ -93,7 +96,7 @@ namespace NewFace.Migrations
 
                     b.HasIndex("ActorId");
 
-                    b.ToTable("ActorEducations", (string)null);
+                    b.ToTable("ActorEducations");
                 });
 
             modelBuilder.Entity("NewFace.Models.Actor.ActorExperience", b =>
@@ -132,7 +135,7 @@ namespace NewFace.Migrations
 
                     b.HasIndex("ActorId");
 
-                    b.ToTable("ActorExperiences", (string)null);
+                    b.ToTable("ActorExperiences");
                 });
 
             modelBuilder.Entity("NewFace.Models.Actor.ActorLink", b =>
@@ -158,7 +161,7 @@ namespace NewFace.Migrations
 
                     b.HasIndex("ActorId");
 
-                    b.ToTable("ActorLinks", (string)null);
+                    b.ToTable("ActorLinks");
                 });
 
             modelBuilder.Entity("NewFace.Models.Entertainment.Entertainment", b =>
@@ -222,7 +225,7 @@ namespace NewFace.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("Entertainments", (string)null);
+                    b.ToTable("Entertainments");
                 });
 
             modelBuilder.Entity("NewFace.Models.SystemLog", b =>
@@ -254,7 +257,7 @@ namespace NewFace.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("SystemLogs", (string)null);
+                    b.ToTable("SystemLogs");
                 });
 
             modelBuilder.Entity("NewFace.Models.Term", b =>
@@ -286,7 +289,7 @@ namespace NewFace.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Terms", (string)null);
+                    b.ToTable("Terms");
                 });
 
             modelBuilder.Entity("NewFace.Models.User", b =>
@@ -327,7 +330,7 @@ namespace NewFace.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("NewFace.Models.UserFile", b =>
@@ -371,7 +374,7 @@ namespace NewFace.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserFile", (string)null);
+                    b.ToTable("UserFile");
                 });
 
             modelBuilder.Entity("NewFace.Models.UserRole", b =>
@@ -397,7 +400,7 @@ namespace NewFace.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserRole", (string)null);
+                    b.ToTable("UserRole");
                 });
 
             modelBuilder.Entity("NewFace.Models.Actor.Actor", b =>
