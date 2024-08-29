@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using NewFace.DTOs.Actor;
-using NewFace.Models.Actor;
 using NewFace.Services;
 
 namespace NewFace.Controllers
@@ -18,9 +17,9 @@ namespace NewFace.Controllers
             _actorService = actorService;
         }
 
-        // GET: api/actor/1
-        [HttpGet]
-        public async Task<IActionResult> GetActor(int userId)
+        // GET: api/actor/profile/1
+        [HttpGet("profile/{userId}")]
+        public async Task<IActionResult> GetActorProfile(int userId)
         {
             if (!ModelState.IsValid)
             {
