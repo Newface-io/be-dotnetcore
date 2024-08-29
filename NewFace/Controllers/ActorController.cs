@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using NewFace.DTOs.Actor;
 using NewFace.Models.Actor;
 using NewFace.Services;
 
@@ -38,7 +39,7 @@ namespace NewFace.Controllers
 
         // POST: api/actor/profile
         [HttpPost("profile")]
-        public async Task<IActionResult> AddActorProfile([FromBody] Actor model)
+        public async Task<IActionResult> AddActorProfile([FromBody] AddActorProfileRequestDto model)
         {
             if (!ModelState.IsValid)
             {
@@ -55,16 +56,16 @@ namespace NewFace.Controllers
             return Ok(response);
         }
 
-        // PUT: api/actor/profile
-        [HttpPut("profile")]
-        public async Task<IActionResult> UpdateActorProfile([FromBody] Actor model)
+        // PUT: api/actors/profile/123
+        [HttpPut("profile/{actorId}")]
+        public async Task<IActionResult> UpdateActorProfile(int actorId, [FromBody] AddActorProfileRequestDto model)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var response = await _actorService.UpdateActorProfile(model);
+            var response = await _actorService.UpdateActorProfile(actorId, model);
 
             if (!response.Success)
             {

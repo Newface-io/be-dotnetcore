@@ -43,9 +43,11 @@ public class ActorService : IActorService
 
             var actorDto = new GetActorResponseDto
             {
+                UserId = userId,
                 Name = user.Name,
                 Email = user.Email,
                 Phone = user.Phone,
+                ActorId = user.Actor.Id,
                 BirthDate = user.Actor.BirthDate?.ToString("yyyy-MM-dd") ?? string.Empty,
                 Address = user.Actor.Address,
                 Height = user.Actor.Height?.ToString() ?? string.Empty,
@@ -72,51 +74,114 @@ public class ActorService : IActorService
         }
     }
 
-    public async Task<ServiceResponse<int>> AddActorProfile(Actor actor)
+    public async Task<ServiceResponse<int>> AddActorProfile(AddActorProfileRequestDto actorDto)
     {
         var response = new ServiceResponse<int>();
 
+        using var transaction = await _context.Database.BeginTransactionAsync();
+
         try
         {
-            var userExists = await _context.Users.AnyAsync(u => u.Id == actor.UserId);
-            if (!userExists)
+            var actor = new Actor
             {
-                response.Success = false;
-                response.Code = MessageCode.Custom.NOT_FOUND_USER.ToString();
-                response.Message = MessageCode.CustomMessages[MessageCode.Custom.NOT_FOUND_USER];
-                return response;
-            }
+                UserId = actorDto.UserId,
+                Address = actorDto.Address,
+                BirthDate = actorDto.BirthDate,
+                Weight = actorDto.Weight,
+                Height = actorDto.Height,
+                Bio = actorDto.Bio,
+            };
 
             await _context.Actors.AddAsync(actor);
             await _context.SaveChangesAsync();
 
+            // Add Experiences
+            if (actorDto.Experiences != null)
+            {
+                var experiences = actorDto.Experiences.Select(exp => new ActorExperience
+                {
+                    ActorId = actor.Id,
+                    Category = exp.Category,
+                    WorkTitle = exp.WorkTitle,
+                    Role = exp.Role,
+                    StartDate = exp.StartDate,
+                    EndDate = exp.EndDate
+                }).ToList();
+
+                await _context.ActorExperiences.AddRangeAsync(experiences);
+            }
+
+            // Add Education
+            if (actorDto.Education != null)
+            {
+                var education = actorDto.Education.Select(edu => new ActorEducation
+                {
+                    ActorId = actor.Id,
+                    EducationType = edu.EducationType,
+                    GraduationStatus = edu.GraduationStatus,
+                    School = edu.School,
+                    Major = edu.Major
+                }).ToList();
+
+                await _context.ActorEducations.AddRangeAsync(education);
+            }
+
+            // Add Links
+            if (actorDto.Links != null)
+            {
+                var links = actorDto.Links.Select(link => new ActorLink
+                {
+                    ActorId = actor.Id,
+                    Url = link.Url,
+                    Description = link.Description
+                }).ToList();
+
+                await _context.ActorLinks.AddRangeAsync(links);
+            }
+
+            // Save all related entities
+            await _context.SaveChangesAsync();
+
+            await transaction.CommitAsync();
+
             response.Success = true;
-            response.Data = actor.UserId;
+            response.Data = actor.Id;
             return response;
         }
         catch (Exception ex)
         {
+            await transaction.RollbackAsync();
+
             response.Success = false;
             response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
             response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
 
-            _logService.LogError("EXCEPTION", ex.Message, "user id: " + actor.UserId + ", actor id:" + actor.Id);
+            _logService.LogError("EXCEPTION", ex.Message, "user id: " + actorDto.UserId);
 
             return response;
         }
     }
 
-    public async Task<ServiceResponse<int>> UpdateActorProfile(Actor actor)
+    public async Task<ServiceResponse<int>> UpdateActorProfile(int actorId, AddActorProfileRequestDto actorDto)
     {
         var response = new ServiceResponse<int>();
 
+        using var transaction = await _context.Database.BeginTransactionAsync();
+
         try
         {
-            var existingActor = await _context.Actors
-                                                .Include(a => a.User)
-                                                .FirstOrDefaultAsync(a => a.Id == actor.Id);
+            var existingActor = await _context.Users
+                .Include(u => u.Actor)
+                    .ThenInclude(a => a.Experiences)
+                .Include(u => u.Actor)
+                    .ThenInclude(a => a.Education)
+                .Include(u => u.Actor)
+                    .ThenInclude(a => a.Links)
+                .Where(u => u.Actor.Id == actorId && u.Id == actorDto.UserId)
+                .Select(u => u.Actor)
+                .FirstOrDefaultAsync();
 
-            if (existingActor == null || existingActor.User == null || existingActor.User.Id != actor.UserId)
+            if (existingActor == null)
             {
                 response.Success = false;
                 response.Code = MessageCode.Custom.NOT_FOUND_USER.ToString();
@@ -124,21 +189,70 @@ public class ActorService : IActorService
                 return response;
             }
 
-            _context.Entry(existingActor).CurrentValues.SetValues(actor);
+            // Update actor properties
+            existingActor.BirthDate = actorDto.BirthDate;
+            existingActor.Address = actorDto.Address;
+            existingActor.Height = actorDto.Height;
+            existingActor.Weight = actorDto.Weight;
+            existingActor.Bio = actorDto.Bio;
+
+            // Update Experiences
+            _context.ActorExperiences.RemoveRange(existingActor.Experiences);
+            if (actorDto.Experiences != null)
+            {
+                existingActor.Experiences = actorDto.Experiences.Select(e => new ActorExperience
+                {
+                    ActorId = actorId,
+                    Category = e.Category,
+                    WorkTitle = e.WorkTitle,
+                    Role = e.Role,
+                    StartDate = e.StartDate,
+                    EndDate = e.EndDate
+                }).ToList();
+            }
+
+            // Update Education
+            _context.ActorEducations.RemoveRange(existingActor.Education);
+            if (actorDto.Education != null)
+            {
+                existingActor.Education = actorDto.Education.Select(e => new ActorEducation
+                {
+                    ActorId = actorId,
+                    EducationType = e.EducationType,
+                    GraduationStatus = e.GraduationStatus,
+                    School = e.School,
+                    Major = e.Major
+                }).ToList();
+            }
+
+            // Update Links
+            _context.ActorLinks.RemoveRange(existingActor.Links);
+            if (actorDto.Links != null)
+            {
+                existingActor.Links = actorDto.Links.Select(l => new ActorLink
+                {
+                    ActorId = actorId,
+                    Url = l.Url,
+                    Description = l.Description
+                }).ToList();
+            }
 
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
 
             response.Success = true;
-            response.Data = actor.UserId;
+            response.Data = existingActor.Id;
             return response;
         }
         catch (Exception ex)
         {
+            await transaction.RollbackAsync();
+
             response.Success = false;
             response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
             response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
 
-            _logService.LogError("EXCEPTION", ex.Message, "user id: " + actor.UserId + ", actor id:" + actor.Id);
+            _logService.LogError("EXCEPTION", ex.Message, $"user id: {actorDto.UserId}, actor id: {actorId}");
 
             return response;
         }

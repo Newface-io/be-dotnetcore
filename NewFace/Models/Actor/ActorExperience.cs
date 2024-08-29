@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace NewFace.Models.Actor;
 
@@ -11,6 +12,7 @@ public class ActorExperience
 
     [ForeignKey("Actor")]
     public int ActorId { get; set; }
+    [JsonIgnore]
     public virtual Actor Actor { get; set; } = null!;
 
     [Required]

@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace NewFace.Models.Entertainment;
 
@@ -11,6 +12,7 @@ public class Entertainment
 
     [ForeignKey("User")]
     public int UserId { get; set; }
+    [JsonIgnore]
     public virtual User User { get; set; } = null!;
 
     [StringLength(50)]

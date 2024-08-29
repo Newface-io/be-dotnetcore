@@ -6,6 +6,6 @@ namespace NewFace.Services;
 public interface IActorService
 {
     Task<ServiceResponse<GetActorResponseDto>> GetActor(int userId);
-    Task<ServiceResponse<int>> AddActorProfile(Actor actor);
-    Task<ServiceResponse<int>> UpdateActorProfile(Actor actor);
+    Task<ServiceResponse<int>> AddActorProfile(AddActorProfileRequestDto actor);
+    Task<ServiceResponse<int>> UpdateActorProfile(int actorId, AddActorProfileRequestDto actor);
 }
