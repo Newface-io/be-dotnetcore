@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using NewFace.Models.Actor;
 using NewFace.Services;
 
 namespace NewFace.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class ActorController : ControllerBase
@@ -15,9 +17,28 @@ namespace NewFace.Controllers
             _actorService = actorService;
         }
 
+        // GET: api/actor/1
+        [HttpGet]
+        public async Task<IActionResult> GetActor(int userId)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var response = await _actorService.GetActor(userId);
+
+            if (!response.Success)
+            {
+                return StatusCode(500, response);
+            }
+
+            return Ok(response);
+        }
+
         // POST: api/actor/profile
         [HttpPost("profile")]
-        public async Task<IActionResult> AddPostActorProfile([FromBody] Actor model)
+        public async Task<IActionResult> AddActorProfile([FromBody] Actor model)
         {
             if (!ModelState.IsValid)
             {
