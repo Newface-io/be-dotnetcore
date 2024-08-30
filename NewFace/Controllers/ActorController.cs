@@ -26,7 +26,7 @@ namespace NewFace.Controllers
                 return BadRequest(ModelState);
             }
 
-            var response = await _actorService.GetActor(userId);
+            var response = await _actorService.GetActorProfile(userId);
 
             if (!response.Success)
             {

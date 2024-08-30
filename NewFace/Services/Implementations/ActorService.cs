@@ -18,7 +18,7 @@ public class ActorService : IActorService
         _logService = logService;
     }
 
-    public async Task<ServiceResponse<GetActorResponseDto>> GetActor(int userId)
+    public async Task<ServiceResponse<GetActorResponseDto>> GetActorProfile(int userId)
     {
         var response = new ServiceResponse<GetActorResponseDto>();
 
@@ -82,6 +82,16 @@ public class ActorService : IActorService
 
         try
         {
+            if (!await _context.Users.AnyAsync(u => u.Id == actorDto.UserId))
+            {
+                response.Success = false;
+                response.Data = 0;
+                response.Code = MessageCode.Custom.NOT_FOUND_USER.ToString();
+                response.Message = MessageCode.CustomMessages[MessageCode.Custom.NOT_FOUND_USER];
+
+                return response;
+            }
+
             var actor = new Actor
             {
                 UserId = actorDto.UserId,
