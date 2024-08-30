@@ -29,6 +29,7 @@ public static class MessageCode
         OTP_NOT_FOUND = 3004,
         OTP_MISMATCH = 3005,
         NOT_AUTH_MOBILE = 3006,
+        INVALID_FILE_TYPE = 4001,
         UNKNOWN_ERROR = 9999
     }
 
@@ -46,6 +47,7 @@ public static class MessageCode
         { Custom.OTP_NOT_FOUND, "OTP Code가 만료되었거나 존재하지 않습니다." },
         { Custom.OTP_MISMATCH, "OTP Code가 틀립니다." },
         { Custom.NOT_AUTH_MOBILE, "OTP 인증이 되어 있지 않은 상태입니다" },
+        { Custom.INVALID_FILE_TYPE, "허용되지 않는 파일 형식입니다." },
         { Custom.UNKNOWN_ERROR, "알수 없는 에러 입니다. 관리자에게 문의하세요." }
     };
 }

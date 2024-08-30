@@ -10,7 +10,7 @@ public class FileUploadRequest
 public class FileUploadInfo
 {
     public IFormFile File { get; set; }
-    public string FileType { get; set; } = string.Empty;
+    public string Category { get; set; } = string.Empty;
 }
 
 // get user file by type

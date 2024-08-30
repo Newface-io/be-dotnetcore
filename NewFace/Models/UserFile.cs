@@ -17,7 +17,15 @@ public class UserFile
 
     [Required]
     [StringLength(100)]
+    public string Category { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(10)]
     public string Type { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(10)]
+    public string FileType { get; set; } = string.Empty;
 
     [Required]
     public string Path { get; set; } = string.Empty;
