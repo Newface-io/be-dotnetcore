@@ -21,11 +21,11 @@ public class UserFile
 
     [Required]
     [StringLength(10)]
-    public string Type { get; set; } = string.Empty;
+    public string Type { get; set; } = string.Empty; // 이미지 or 동영상
 
     [Required]
     [StringLength(10)]
-    public string FileType { get; set; } = string.Empty;
+    public string FileType { get; set; } = string.Empty; // 파일 확장자
 
     [Required]
     public string Path { get; set; } = string.Empty;

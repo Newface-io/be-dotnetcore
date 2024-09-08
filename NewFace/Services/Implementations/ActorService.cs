@@ -11,11 +11,13 @@ public class ActorService : IActorService
 {
     private readonly DataContext _context;
     private readonly ILogService _logService;
+    private readonly IUserService _userService;
 
-    public ActorService(DataContext context, ILogService logService)
+    public ActorService(DataContext context, ILogService logService, IUserService userService)
     {
         _context = context;
         _logService = logService;
+        _userService = userService;
     }
 
     public async Task<ServiceResponse<GetActorResponseDto>> GetActorProfile(int userId)
@@ -74,7 +76,7 @@ public class ActorService : IActorService
         }
     }
 
-    public async Task<ServiceResponse<int>> AddActorProfile(AddActorProfileRequestDto actorDto)
+    public async Task<ServiceResponse<int>> UpdateActorProfile(UpdateActorProfileRequestDto actorDto)
     {
         var response = new ServiceResponse<int>();
 
@@ -82,116 +84,15 @@ public class ActorService : IActorService
 
         try
         {
-            if (!await _context.Users.AnyAsync(u => u.Id == actorDto.UserId))
-            {
-                response.Success = false;
-                response.Data = 0;
-                response.Code = MessageCode.Custom.NOT_FOUND_USER.ToString();
-                response.Message = MessageCode.CustomMessages[MessageCode.Custom.NOT_FOUND_USER];
-
-                return response;
-            }
-
-            var actor = new Actor
-            {
-                UserId = actorDto.UserId,
-                Address = actorDto.Address,
-                BirthDate = actorDto.BirthDate,
-                Weight = actorDto.Weight,
-                Height = actorDto.Height,
-                Bio = actorDto.Bio,
-            };
-
-            await _context.Actors.AddAsync(actor);
-            await _context.SaveChangesAsync();
-
-            // Add Experiences
-            if (actorDto.Experiences != null)
-            {
-                var experiences = actorDto.Experiences.Select(exp => new ActorExperience
-                {
-                    ActorId = actor.Id,
-                    Category = exp.Category,
-                    WorkTitle = exp.WorkTitle,
-                    Role = exp.Role,
-                    StartDate = exp.StartDate,
-                    EndDate = exp.EndDate
-                }).ToList();
-
-                await _context.ActorExperiences.AddRangeAsync(experiences);
-            }
-
-            // Add Education
-            if (actorDto.Education != null)
-            {
-                var education = actorDto.Education.Select(edu => new ActorEducation
-                {
-                    ActorId = actor.Id,
-                    EducationType = edu.EducationType,
-                    GraduationStatus = edu.GraduationStatus,
-                    School = edu.School,
-                    Major = edu.Major
-                }).ToList();
-
-                await _context.ActorEducations.AddRangeAsync(education);
-            }
-
-            // Add Links
-            if (actorDto.Links != null)
-            {
-                var links = actorDto.Links.Select(link => new ActorLink
-                {
-                    ActorId = actor.Id,
-                    Url = link.Url,
-                    Description = link.Description
-                }).ToList();
-
-                await _context.ActorLinks.AddRangeAsync(links);
-            }
-
-            // Save all related entities
-            await _context.SaveChangesAsync();
-
-            await transaction.CommitAsync();
-
-            response.Success = true;
-            response.Data = actor.Id;
-            return response;
-        }
-        catch (Exception ex)
-        {
-            await transaction.RollbackAsync();
-
-            response.Success = false;
-            response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
-            response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
-
-            _logService.LogError("EXCEPTION", ex.Message, "user id: " + actorDto.UserId);
-
-            return response;
-        }
-    }
-
-    public async Task<ServiceResponse<int>> UpdateActorProfile(int actorId, AddActorProfileRequestDto actorDto)
-    {
-        var response = new ServiceResponse<int>();
-
-        using var transaction = await _context.Database.BeginTransactionAsync();
-
-        try
-        {
-            var existingActor = await _context.Users
-                .Include(u => u.Actor)
-                    .ThenInclude(a => a.Experiences)
+            var existingUserWithActor = await _context.Users
                 .Include(u => u.Actor)
                     .ThenInclude(a => a.Education)
                 .Include(u => u.Actor)
                     .ThenInclude(a => a.Links)
-                .Where(u => u.Actor.Id == actorId && u.Id == actorDto.UserId)
-                .Select(u => u.Actor)
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(u => u.Id == actorDto.UserId);
 
-            if (existingActor == null)
+            // 1. check if user and actor data is exist
+            if (existingUserWithActor == null || existingUserWithActor.Actor == null)
             {
                 response.Success = false;
                 response.Code = MessageCode.Custom.NOT_FOUND_USER.ToString();
@@ -199,26 +100,39 @@ public class ActorService : IActorService
                 return response;
             }
 
-            // Update actor properties
-            existingActor.BirthDate = actorDto.BirthDate;
-            existingActor.Address = actorDto.Address;
-            existingActor.Height = actorDto.Height;
-            existingActor.Weight = actorDto.Weight;
-            existingActor.Bio = actorDto.Bio;
-
-            // Update Experiences
-            _context.ActorExperiences.RemoveRange(existingActor.Experiences);
-            if (actorDto.Experiences != null)
+            // 2. check actor role
+            if (!await _userService.HasUserRoleAsync(existingUserWithActor.Id, NewFace.Common.Constants.UserRole.Actor))
             {
-                existingActor.Experiences = actorDto.Experiences.Select(e => new ActorExperience
-                {
-                    ActorId = actorId,
-                    Category = e.Category,
-                    WorkTitle = e.WorkTitle,
-                    Role = e.Role,
-                    StartDate = e.StartDate,
-                    EndDate = e.EndDate
-                }).ToList();
+                response.Success = false;
+                response.Code = MessageCode.Custom.USER_NOT_ACTOR.ToString();
+                response.Message = MessageCode.CustomMessages[MessageCode.Custom.USER_NOT_ACTOR];
+                return response;
+            }
+
+            // Update User properties
+            if (existingUserWithActor.Name != actorDto.Name || existingUserWithActor.Email != actorDto.Email)
+            {
+                existingUserWithActor.Name = actorDto.Name;
+                existingUserWithActor.Email = actorDto.Email;
+                existingUserWithActor.LastUpdated = DateTime.UtcNow;
+                _context.Users.Update(existingUserWithActor);
+            }
+
+            // Update Actor properties
+            var existingActor = existingUserWithActor.Actor;
+            if (existingActor.BirthDate != actorDto.BirthDate ||
+                existingActor.Gender != actorDto.Gender ||
+                existingActor.Height != actorDto.Height ||
+                existingActor.Weight != actorDto.Weight ||
+                existingActor.Bio != actorDto.Bio)
+            {
+                existingActor.BirthDate = actorDto.BirthDate;
+                existingActor.Gender = actorDto.Gender;
+                existingActor.Height = actorDto.Height;
+                existingActor.Weight = actorDto.Weight;
+                existingActor.Bio = actorDto.Bio;
+                existingActor.LastUpdated = DateTime.UtcNow;
+                _context.Actors.Update(existingActor);
             }
 
             // Update Education
@@ -227,7 +141,7 @@ public class ActorService : IActorService
             {
                 existingActor.Education = actorDto.Education.Select(e => new ActorEducation
                 {
-                    ActorId = actorId,
+                    ActorId = existingUserWithActor.Actor.Id,
                     EducationType = e.EducationType,
                     GraduationStatus = e.GraduationStatus,
                     School = e.School,
@@ -241,9 +155,9 @@ public class ActorService : IActorService
             {
                 existingActor.Links = actorDto.Links.Select(l => new ActorLink
                 {
-                    ActorId = actorId,
+                    ActorId = existingUserWithActor.Actor.Id,
+                    Category = l.Category,
                     Url = l.Url,
-                    Description = l.Description
                 }).ToList();
             }
 
@@ -262,7 +176,7 @@ public class ActorService : IActorService
             response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
             response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
 
-            _logService.LogError("EXCEPTION", ex.Message, $"user id: {actorDto.UserId}, actor id: {actorId}");
+            _logService.LogError("EXCEPTION", ex.Message, $"user id: {actorDto.UserId}");
 
             return response;
         }

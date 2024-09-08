@@ -1,5 +1,6 @@
 ﻿using NewFace.Common.Constants;
 using NewFace.Data;
+using NewFace.Models.Actor;
 using NewFace.Responses;
 
 namespace NewFace.Services;
@@ -110,6 +111,27 @@ public class UserService : IUserService
                 _context.UserRole.Add(addUserRole);
             }
 
+            // Handle different role types
+            switch (role)
+            {
+                case UserRole.Actor:
+
+                    var existingActor = await _context.Actors.FirstOrDefaultAsync(a => a.UserId == userId);
+                    if (existingActor == null)
+                    {
+                        var newActor = new Actor
+                        {
+                            UserId = userId
+                        };
+                        _context.Actors.Add(newActor);
+                    }
+
+                    break;
+                case UserRole.Entertainment:
+                    break;
+                default: break;
+            }
+
             await _context.SaveChangesAsync();
 
             response.Success = true;
@@ -133,5 +155,11 @@ public class UserService : IUserService
     private bool IsValidRole(string role)
     {
         return Common.Constants.UserRole.AllRoles.Contains(role);
+    }
+
+    public async Task<bool> HasUserRoleAsync(int userId, string role)
+    {
+        return await _context.UserRole
+            .AnyAsync(ur => ur.UserId == userId && ur.Role == role);
     }
 }

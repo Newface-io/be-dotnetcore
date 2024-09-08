@@ -16,8 +16,8 @@ public class ActorLink
     public virtual Actor Actor { get; set; } = null!;
 
     [Required]
-    public string Url { get; set; } = string.Empty;
+    public string Category { get; set; } = string.Empty; // SNS Link
 
-    [StringLength(200)]
-    public string? Description { get; set; }
+    [Required]
+    public string Url { get; set; } = string.Empty;
 }

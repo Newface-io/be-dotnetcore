@@ -36,35 +36,16 @@ namespace NewFace.Controllers
             return Ok(response);
         }
 
-        // POST: api/actor/profile
-        [HttpPost("profile")]
-        public async Task<IActionResult> AddActorProfile([FromBody] AddActorProfileRequestDto model)
+        // PUT: api/actors/profile
+        [HttpPut("profile")]
+        public async Task<IActionResult> UpdateActorProfile([FromBody] UpdateActorProfileRequestDto model)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var response = await _actorService.AddActorProfile(model);
-
-            if (!response.Success)
-            {
-                return StatusCode(500, response);
-            }
-
-            return Ok(response);
-        }
-
-        // PUT: api/actors/profile/123
-        [HttpPut("profile/{actorId}")]
-        public async Task<IActionResult> UpdateActorProfile(int actorId, [FromBody] AddActorProfileRequestDto model)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var response = await _actorService.UpdateActorProfile(actorId, model);
+            var response = await _actorService.UpdateActorProfile(model);
 
             if (!response.Success)
             {
