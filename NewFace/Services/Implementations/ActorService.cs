@@ -35,11 +35,21 @@ public class ActorService : IActorService
                     .ThenInclude(a => a.Links)
                 .FirstOrDefaultAsync(u => u.Id == userId);
 
+            // 1. check if user and actor data is exist
             if (user == null || user.Actor == null)
             {
                 response.Success = false;
                 response.Code = MessageCode.Custom.NOT_FOUND_USER.ToString();
                 response.Message = MessageCode.CustomMessages[MessageCode.Custom.NOT_FOUND_USER];
+                return response;
+            }
+
+            // 2. check actor role
+            if (!await _userService.HasUserRoleAsync(user.Id, NewFace.Common.Constants.UserRole.Actor))
+            {
+                response.Success = false;
+                response.Code = MessageCode.Custom.USER_NOT_ACTOR.ToString();
+                response.Message = MessageCode.CustomMessages[MessageCode.Custom.USER_NOT_ACTOR];
                 return response;
             }
 
@@ -55,9 +65,14 @@ public class ActorService : IActorService
                 Height = user.Actor.Height?.ToString() ?? string.Empty,
                 Weight = user.Actor.Weight?.ToString() ?? string.Empty,
                 Bio = user.Actor.Bio ?? string.Empty,
+                Gender = user.Actor.Gender ?? string.Empty,
+
+                Role = NewFace.Common.Constants.UserRole.Actor,
+
                 ActorEducations = user.Actor.Education.ToList(),
                 ActorExperiences = user.Actor.Experiences.ToList(),
-                ActorLinks = user.Actor.Links.ToList()
+                ActorLinks = user.Actor.Links.ToList(),
+                
             };
 
             response.Success = true;
