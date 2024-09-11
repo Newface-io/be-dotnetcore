@@ -20,7 +20,7 @@ public class ActorService : IActorService
         _userService = userService;
     }
 
-    public async Task<ServiceResponse<GetActorResponseDto>> GetActorProfile(int userId)
+    public async Task<ServiceResponse<GetActorResponseDto>> GetActorProfile(int userId, int actorId)
     {
         var response = new ServiceResponse<GetActorResponseDto>();
 
@@ -33,10 +33,10 @@ public class ActorService : IActorService
                     .ThenInclude(a => a.Education)
                 .Include(u => u.Actor)
                     .ThenInclude(a => a.Links)
-                .FirstOrDefaultAsync(u => u.Id == userId);
+                .FirstOrDefaultAsync(u => u.Id == userId && u.Actor.Id == actorId);
 
             // 1. check if user and actor data is exist
-            if (user == null || user.Actor == null)
+            if (user == null || user.Actor == null || user.Actor.Id != actorId)
             {
                 response.Success = false;
                 response.Code = MessageCode.Custom.NOT_FOUND_USER.ToString();
@@ -91,7 +91,7 @@ public class ActorService : IActorService
         }
     }
 
-    public async Task<ServiceResponse<int>> UpdateActorProfile(UpdateActorProfileRequestDto actorDto)
+    public async Task<ServiceResponse<int>> UpdateActorProfile(UpdateActorProfileRequestDto model)
     {
         var response = new ServiceResponse<int>();
 
@@ -104,7 +104,7 @@ public class ActorService : IActorService
                     .ThenInclude(a => a.Education)
                 .Include(u => u.Actor)
                     .ThenInclude(a => a.Links)
-                .FirstOrDefaultAsync(u => u.Id == actorDto.UserId);
+                .FirstOrDefaultAsync(u => u.Id == model.UserId && u.Actor.Id == model.ActorId);
 
             // 1. check if user and actor data is exist
             if (existingUserWithActor == null || existingUserWithActor.Actor == null)
@@ -125,36 +125,36 @@ public class ActorService : IActorService
             }
 
             // Update User properties
-            if (existingUserWithActor.Name != actorDto.Name || existingUserWithActor.Email != actorDto.Email)
+            if (existingUserWithActor.Name != model.Name || existingUserWithActor.Email != model.Email)
             {
-                existingUserWithActor.Name = actorDto.Name;
-                existingUserWithActor.Email = actorDto.Email;
+                existingUserWithActor.Name = model.Name;
+                existingUserWithActor.Email = model.Email;
                 existingUserWithActor.LastUpdated = DateTime.UtcNow;
                 _context.Users.Update(existingUserWithActor);
             }
 
             // Update Actor properties
             var existingActor = existingUserWithActor.Actor;
-            if (existingActor.BirthDate != actorDto.BirthDate ||
-                existingActor.Gender != actorDto.Gender ||
-                existingActor.Height != actorDto.Height ||
-                existingActor.Weight != actorDto.Weight ||
-                existingActor.Bio != actorDto.Bio)
+            if (existingActor.BirthDate != model.BirthDate ||
+                existingActor.Gender != model.Gender ||
+                existingActor.Height != model.Height ||
+                existingActor.Weight != model.Weight ||
+                existingActor.Bio != model.Bio)
             {
-                existingActor.BirthDate = actorDto.BirthDate;
-                existingActor.Gender = actorDto.Gender;
-                existingActor.Height = actorDto.Height;
-                existingActor.Weight = actorDto.Weight;
-                existingActor.Bio = actorDto.Bio;
+                existingActor.BirthDate = model.BirthDate;
+                existingActor.Gender = model.Gender;
+                existingActor.Height = model.Height;
+                existingActor.Weight = model.Weight;
+                existingActor.Bio = model.Bio;
                 existingActor.LastUpdated = DateTime.UtcNow;
                 _context.Actors.Update(existingActor);
             }
 
             // Update Education
             _context.ActorEducations.RemoveRange(existingActor.Education);
-            if (actorDto.Education != null)
+            if (model.Education != null)
             {
-                existingActor.Education = actorDto.Education.Select(e => new ActorEducation
+                existingActor.Education = model.Education.Select(e => new ActorEducation
                 {
                     ActorId = existingUserWithActor.Actor.Id,
                     EducationType = e.EducationType,
@@ -166,9 +166,9 @@ public class ActorService : IActorService
 
             // Update Links
             _context.ActorLinks.RemoveRange(existingActor.Links);
-            if (actorDto.Links != null)
+            if (model.Links != null)
             {
-                existingActor.Links = actorDto.Links.Select(l => new ActorLink
+                existingActor.Links = model.Links.Select(l => new ActorLink
                 {
                     ActorId = existingUserWithActor.Actor.Id,
                     Category = l.Category,
@@ -191,10 +191,264 @@ public class ActorService : IActorService
             response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
             response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
 
-            _logService.LogError("EXCEPTION", ex.Message, $"user id: {actorDto.UserId}");
+            _logService.LogError("EXCEPTION", ex.Message, $"user id: {model.UserId}");
 
             return response;
         }
     }
 
+    public async Task<ServiceResponse<ActorDemoStarListDto>> GetActorDemoStar(int userId, int actorId)
+    {
+        var response = new ServiceResponse<ActorDemoStarListDto>();
+
+        try
+        {
+            var existingUserWithActor = await _context.Users
+                                                .Include(u => u.Actor)
+                                                    .ThenInclude(a => a.DemoStars)
+                                                .FirstOrDefaultAsync(u => u.Id == userId && u.Actor.Id == actorId);
+
+            // 1. Check if user and actor data exist
+            if (existingUserWithActor == null || existingUserWithActor.Actor == null)
+            {
+                response.Success = false;
+                response.Code = MessageCode.Custom.NOT_FOUND_USER.ToString();
+                response.Message = MessageCode.CustomMessages[MessageCode.Custom.NOT_FOUND_USER];
+                return response;
+            }
+
+            // 2. Check actor role
+            if (!await _userService.HasUserRoleAsync(existingUserWithActor.Id, NewFace.Common.Constants.UserRole.Actor))
+            {
+                response.Success = false;
+                response.Code = MessageCode.Custom.USER_NOT_ACTOR.ToString();
+                response.Message = MessageCode.CustomMessages[MessageCode.Custom.USER_NOT_ACTOR];
+                return response;
+            }
+
+            // 3. Prepare the DTO
+            var actorDemoStarListDto = new ActorDemoStarListDto
+            {
+                ActorId = existingUserWithActor.Actor.Id,
+                DemoStars = existingUserWithActor.Actor.DemoStars.Select(ds => new DemoStarDto
+                {
+                    Id = ds.Id,
+                    Title = ds.Title,
+                    Category = ds.Category,
+                    Url = ds.Url
+                }).ToList()
+            };
+
+            response.Success = true;
+            response.Data = actorDemoStarListDto;
+            return response;
+        }
+        catch (Exception ex)
+        {
+            response.Success = false;
+            response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
+            response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
+
+            _logService.LogError("EXCEPTION", ex.Message, $"user id: {userId} , actor id: {actorId}");
+
+            return response;
+        }
+    }
+
+    public async Task<ServiceResponse<int>> AddActorDemoStar(AddActorDemoStarDto model)
+    {
+        var response = new ServiceResponse<int>();
+
+        using var transaction = await _context.Database.BeginTransactionAsync();
+
+        try
+        {
+            var existingUserWithActor = await _context.Users
+                .Include(u => u.Actor)
+                .FirstOrDefaultAsync(u => u.Id == model.UserId);
+
+            // 1. check if user and actor data is exist
+            if (existingUserWithActor == null || existingUserWithActor.Actor == null)
+            {
+                response.Success = false;
+                response.Code = MessageCode.Custom.NOT_FOUND_USER.ToString();
+                response.Message = MessageCode.CustomMessages[MessageCode.Custom.NOT_FOUND_USER];
+                return response;
+            }
+
+            // 2. check actor role
+            if (!await _userService.HasUserRoleAsync(existingUserWithActor.Id, NewFace.Common.Constants.UserRole.Actor))
+            {
+                response.Success = false;
+                response.Code = MessageCode.Custom.USER_NOT_ACTOR.ToString();
+                response.Message = MessageCode.CustomMessages[MessageCode.Custom.USER_NOT_ACTOR];
+                return response;
+            }
+
+            // 3. Create and add new ActorDemoStar
+            var newActorDemoStar = new ActorDemoStar
+            {
+                ActorId = existingUserWithActor.Actor.Id,
+                Title = model.Title,
+                Category = model.Category,
+                Url = model.Url
+            };
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            response.Success = true;
+            response.Data = newActorDemoStar.Id;
+            return response;
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+
+            response.Success = false;
+            response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
+            response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
+
+            _logService.LogError("EXCEPTION", ex.Message, $"user id: {model.UserId}");
+
+            return response;
+        }
+    }
+
+
+    public async Task<ServiceResponse<int>> UpdateActorDemoStar(UpdateActorDemoStarDto model)
+    {
+        var response = new ServiceResponse<int>();
+
+        using var transaction = await _context.Database.BeginTransactionAsync();
+
+        try
+        {
+            var existingUserWithActor = await _context.Users
+                .Include(u => u.Actor)
+                    .ThenInclude(a => a.DemoStars)
+                .FirstOrDefaultAsync(u => u.Id == model.UserId);
+
+            // 1. check if user and actor data is exist
+            if (existingUserWithActor == null || existingUserWithActor.Actor == null)
+            {
+                response.Success = false;
+                response.Code = MessageCode.Custom.NOT_FOUND_USER.ToString();
+                response.Message = MessageCode.CustomMessages[MessageCode.Custom.NOT_FOUND_USER];
+                return response;
+            }
+
+            // 2. check actor role
+            if (!await _userService.HasUserRoleAsync(existingUserWithActor.Id, NewFace.Common.Constants.UserRole.Actor))
+            {
+                response.Success = false;
+                response.Code = MessageCode.Custom.USER_NOT_ACTOR.ToString();
+                response.Message = MessageCode.CustomMessages[MessageCode.Custom.USER_NOT_ACTOR];
+                return response;
+            }
+
+            var existingDemoStar = await _context.ActorDemoStars
+                    .FirstOrDefaultAsync(ds => ds.Id == model.Id);
+
+            // 3. check if DemoStar exists
+            if (existingDemoStar == null)
+            {
+                response.Success = false;
+                response.Code = MessageCode.Custom.INVALID_DEMOSTAR.ToString();
+                response.Message = MessageCode.CustomMessages[MessageCode.Custom.INVALID_DEMOSTAR];
+                return response;
+            }
+
+            // 4. update demo star
+            existingDemoStar.Title = model.Title;
+            existingDemoStar.Category = model.Category;
+            existingDemoStar.Url = model.Url;
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            response.Success = true;
+            response.Data = existingDemoStar.Id;
+            return response;
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+
+            response.Success = false;
+            response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
+            response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
+
+            _logService.LogError("EXCEPTION", ex.Message, $"user id: {model.UserId} , actor demo star id: {model.Id}");
+
+            return response;
+        }
+    }
+
+    public async Task<ServiceResponse<int>> DeleteActorDemoStar(int id, int userId)
+    {
+        var response = new ServiceResponse<int>();
+
+        using var transaction = await _context.Database.BeginTransactionAsync();
+
+        try
+        {
+            var existingUserWithActor = await _context.Users
+                .Include(u => u.Actor)
+                    .ThenInclude(a => a.DemoStars)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            // 1. check if user and actor data is exist
+            if (existingUserWithActor == null || existingUserWithActor.Actor == null)
+            {
+                response.Success = false;
+                response.Code = MessageCode.Custom.NOT_FOUND_USER.ToString();
+                response.Message = MessageCode.CustomMessages[MessageCode.Custom.NOT_FOUND_USER];
+                return response;
+            }
+
+            // 2. check actor role
+            if (!await _userService.HasUserRoleAsync(existingUserWithActor.Id, NewFace.Common.Constants.UserRole.Actor))
+            {
+                response.Success = false;
+                response.Code = MessageCode.Custom.USER_NOT_ACTOR.ToString();
+                response.Message = MessageCode.CustomMessages[MessageCode.Custom.USER_NOT_ACTOR];
+                return response;
+            }
+
+            var existingDemoStar = await _context.ActorDemoStars
+                    .FirstOrDefaultAsync(ds => ds.Id == id);
+
+            // 3. check if DemoStar exists
+            if (existingDemoStar == null)
+            {
+                response.Success = false;
+                response.Code = MessageCode.Custom.INVALID_DEMOSTAR.ToString();
+                response.Message = MessageCode.CustomMessages[MessageCode.Custom.INVALID_DEMOSTAR];
+                return response;
+            }
+
+            // 4. Remove the DemoStar
+            _context.ActorDemoStars.Remove(existingDemoStar);
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            response.Success = true;
+            response.Data = id;
+            return response;
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+
+            response.Success = false;
+            response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
+            response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
+
+            _logService.LogError("EXCEPTION", ex.Message, $"user id: {userId} , actor demo star id: {id}");
+
+            return response;
+        }
+    }
 }

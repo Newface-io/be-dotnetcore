@@ -31,6 +31,7 @@ public static class MessageCode
         OTP_MISMATCH = 3005,
         NOT_AUTH_MOBILE = 3006,
         INVALID_FILE_TYPE = 4001,
+        INVALID_DEMOSTAR = 4002,
         UNKNOWN_ERROR = 9999
     }
 
@@ -50,6 +51,7 @@ public static class MessageCode
         { Custom.OTP_MISMATCH, "OTP Code가 틀립니다." },
         { Custom.NOT_AUTH_MOBILE, "OTP 인증이 되어 있지 않은 상태입니다" },
         { Custom.INVALID_FILE_TYPE, "허용되지 않는 파일 형식입니다." },
+        { Custom.INVALID_DEMOSTAR, "존재하지 않는 데이터입니다." },
         { Custom.UNKNOWN_ERROR, "알수 없는 에러 입니다. 관리자에게 문의하세요." }
     };
 }
