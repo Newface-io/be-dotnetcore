@@ -9,10 +9,10 @@ using System.Security.Claims;
 
 namespace NewFace.Controllers
 {
-    // AuthenticateAndValidate : model validation / user id 체크
+    // AuthenticateAndValidateUser : model validation / user id 체크
     [Authorize]
     [Route("api/[controller]")]
-    [AuthenticateAndValidate]
+    [AuthenticateAndValidateUser]
     [ApiController]
     public class UserController : ControllerBase
     {
@@ -46,7 +46,7 @@ namespace NewFace.Controllers
                 return Ok(response);
             } else
             {
-                return StatusCode(500);
+                return Forbid();
             }
         }
 

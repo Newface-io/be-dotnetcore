@@ -112,6 +112,8 @@ public class AuthService : IAuthService
 
         try
         {
+            var token = string.Empty;
+
             var user = await _context.Users
                             .Include(u => u.UserRoles)
                             .FirstOrDefaultAsync(u => u.Email == request.Email);
@@ -146,22 +148,13 @@ public class AuthService : IAuthService
                 return response;
             }
 
-            // 3. Generate JWT token
-            var token = GenerateJwtToken(user);
-
-            // 4. get role
+            // 3. get role
             var userRole = user.UserRoles.FirstOrDefault()?.Role ?? string.Empty;
 
-            // 5. Prepare response data
-            response.Data = new SignInResponseDto()
-            {
-                id = user.Id,
-                Email = user.Email,
-                token = token,
-                role = userRole
-            };
 
-            // 6. Set specific ID based on role
+            
+
+            // 4. Set specific ID based on role
             switch (userRole)
             {
                 case NewFace.Common.Constants.UserRole.Actor:
@@ -169,14 +162,34 @@ public class AuthService : IAuthService
                         .Where(a => a.UserId == user.Id)
                         .Select(a => a.Id)
                         .FirstOrDefaultAsync();
+
+                    // 5. Generate JWT token
+                    token = GenerateJwtToken(user, userRole, response.Data.actorId??0);
+
                     break;
                 case NewFace.Common.Constants.UserRole.Entertainment:
                     response.Data.enterId = await _context.Entertainments
                         .Where(e => e.UserId == user.Id)
                         .Select(e => e.Id)
                         .FirstOrDefaultAsync();
+
+                    // 5. Generate JWT token
+                    token = GenerateJwtToken(user, userRole, response.Data.enterId??0);
+                    break;
+                default:
+                    // 5. Generate JWT token
+                    token = GenerateJwtToken(user, userRole);
                     break;
             }
+
+            // 6.Prepare response data
+            response.Data = new SignInResponseDto()
+            {
+                id = user.Id,
+                Email = user.Email,
+                token = token,
+                role = userRole
+            };
 
             return response;
         }
@@ -234,15 +247,34 @@ public class AuthService : IAuthService
         return true;
     }
 
-    public string GenerateJwtToken(User user)
+    public string GenerateJwtToken(User user, string role, int roleSpecificId = 0)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.ASCII.GetBytes(_configuration["Jwt:SecretKey"]);
 
         var claims = new List<Claim>
         {
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Role, role),
         };
+
+        switch (role)
+        {
+            case NewFace.Common.Constants.UserRole.Actor:
+                if (roleSpecificId != 0)
+                {
+                    claims.Add(new Claim("ActorId", roleSpecificId.ToString()));
+                }
+                break;
+            case NewFace.Common.Constants.UserRole.Entertainment:
+                if (roleSpecificId != 0)
+                {
+                    claims.Add(new Claim("EnterId", roleSpecificId.ToString()));
+                }
+                break;
+            default:
+                break;
+        }
 
 
         var tokenDescriptor = new SecurityTokenDescriptor

@@ -10,7 +10,7 @@ public interface IAuthService
     Task<ServiceResponse<SignInResponseDto>> SignIn(SignInRequestDto request);
     string CreateHashPassword(string password);
     bool VerifyPassword(string enteredPassword, string storedHash);
-    string GenerateJwtToken(User user);
+    string GenerateJwtToken(User user, string role, int roleSpecificId = 0);
     Task<ServiceResponse<int>> SendOTP(int userId, string phone);
     Task<ServiceResponse<int>> VerifyOTP(int userId, string inputOTP);
 }

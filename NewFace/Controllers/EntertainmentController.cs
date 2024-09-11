@@ -2,12 +2,14 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using NewFace.DTOs.Actor;
-using NewFace.Services;
+using NewFace.Filters;
 using NewFace.Services.Interfaces;
 
 namespace NewFace.Controllers
 {
-    [Authorize]
+    // AuthenticateAndValidateEntertainment : model validation / user id, enter id 체크
+    [Authorize(Roles = NewFace.Common.Constants.UserRole.Entertainment)]
+    [AuthenticateAndValidateEntertainment]
     [Route("api/[controller]")]
     [ApiController]
     public class EntertainmentController : ControllerBase

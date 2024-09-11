@@ -10,10 +10,10 @@ using Swashbuckle.AspNetCore.Annotations;
 namespace NewFace.Controllers
 {
 
-    // AuthenticateAndValidate : model validation / user id 체크
-    [Authorize]
+    // AuthenticateAndValidateActor : model validation / user id, actor id 체크
+    [Authorize(Roles = NewFace.Common.Constants.UserRole.Actor)]
     [Route("api/[controller]")]
-    [AuthenticateAndValidate]
+    [AuthenticateAndValidateActor]
     [ApiController]
     public class ActorController : ControllerBase
     {
