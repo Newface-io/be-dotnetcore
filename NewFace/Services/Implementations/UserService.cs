@@ -10,11 +10,13 @@ public class UserService : IUserService
 {
     private readonly DataContext _context;
     private readonly ILogService _logService;
+    private readonly IAuthService _authService;
 
-    public UserService(DataContext context, ILogService logService)
+    public UserService(DataContext context, ILogService logService, IAuthService authService)
     {
         _context = context;
         _logService = logService;
+        _authService = authService;
     }
 
     public async Task<ServiceResponse<bool>> DeleteUser(int userId)
@@ -58,9 +60,9 @@ public class UserService : IUserService
         }
     }
 
-    public async Task<ServiceResponse<int>> SetUserRole(int userId, string role)
+    public async Task<ServiceResponse<string>> SetUserRole(int userId, string role)
     {
-        var response = new ServiceResponse<int>();
+        var response = new ServiceResponse<string>();
 
         try
         {
@@ -70,7 +72,7 @@ public class UserService : IUserService
             if (user == null)
             {
                 response.Success = false;
-                response.Data = 0;
+                response.Data = string.Empty;
                 response.Code = MessageCode.Custom.NOT_FOUND_USER.ToString();
                 response.Message = MessageCode.CustomMessages[MessageCode.Custom.NOT_FOUND_USER];
 
@@ -80,7 +82,7 @@ public class UserService : IUserService
             if (!IsValidRole(role))
             {
                 response.Success = false;
-                response.Data = 0;
+                response.Data = string.Empty;
                 response.Code = MessageCode.Custom.INVALID_ROLE.ToString();
                 response.Message = MessageCode.CustomMessages[MessageCode.Custom.INVALID_ROLE]; ;
 
@@ -93,7 +95,7 @@ public class UserService : IUserService
             if (userRole != null)
             {
                 response.Success = false;
-                response.Data = 0;
+                response.Data = string.Empty;
                 response.Code = MessageCode.Custom.REGISTERED_ROLE.ToString();
                 response.Message = MessageCode.CustomMessages[MessageCode.Custom.REGISTERED_ROLE]; ;
 
@@ -156,15 +158,30 @@ public class UserService : IUserService
 
             await _context.SaveChangesAsync();
 
+            var updatedUser = await _context.Users
+                                    .Include(u => u.UserRoles)
+                                    .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (updatedUser == null)
+            {
+                response.Success = false;
+                response.Data = string.Empty;
+                response.Code = MessageCode.Custom.NOT_FOUND_USER.ToString();
+                response.Message = MessageCode.CustomMessages[MessageCode.Custom.NOT_FOUND_USER];
+                return response;
+            }
+
+            string newToken = _authService.GenerateJwtToken(updatedUser, role, roleSpecificId);
+
             response.Success = true;
-            response.Data = roleSpecificId;
+            response.Data = newToken;
 
             return response;
         }
         catch (Exception ex)
         {
             response.Success = false;
-            response.Data = 0;
+            response.Data = string.Empty;
             response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
             response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
 
