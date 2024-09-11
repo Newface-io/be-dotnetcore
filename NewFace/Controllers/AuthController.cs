@@ -2,6 +2,7 @@
 using NewFace.Common.Constants;
 using NewFace.DTOs.Auth;
 using NewFace.Services;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace NewFace.Controllers
 {
@@ -17,6 +18,7 @@ namespace NewFace.Controllers
         }
 
 
+        [SwaggerOperation(Summary = "로그인")]
         [HttpPost]
         [Route("signin")]
         public async Task<IActionResult> SignIn([FromBody] SignInRequestDto request)
@@ -40,6 +42,8 @@ namespace NewFace.Controllers
             return Ok(response);
         }
 
+
+        [SwaggerOperation(Summary = "회원가입")]
         [HttpPost]
         [Route("signup")]
         public async Task<IActionResult> SignUp([FromBody] SignUpRequestDto request)
@@ -59,6 +63,8 @@ namespace NewFace.Controllers
             return Ok(response);
         }
 
+
+        [SwaggerOperation(Summary = "핸드폰 OTP 번호 발송")]
         [HttpPost]
         [Route("sendOTP")]
         public async Task<IActionResult> SendOTP(int userId, string phone)
@@ -81,6 +87,7 @@ namespace NewFace.Controllers
         }
 
 
+        [SwaggerOperation(Summary = "핸드폰 OTP 번호 확인")]
         [HttpPost]
         [Route("verifyOTP")]
         public async Task<IActionResult> VerifyOTP(int userId, string inputOTP)

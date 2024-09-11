@@ -1,6 +1,7 @@
 ﻿using NewFace.Common.Constants;
 using NewFace.Data;
 using NewFace.Models.Actor;
+using NewFace.Models.Entertainment;
 using NewFace.Responses;
 
 namespace NewFace.Services;
@@ -111,6 +112,8 @@ public class UserService : IUserService
                 _context.UserRole.Add(addUserRole);
             }
 
+            int roleSpecificId = 0;
+
             // Handle different role types
             switch (role)
             {
@@ -123,11 +126,30 @@ public class UserService : IUserService
                         {
                             UserId = userId
                         };
+
                         _context.Actors.Add(newActor);
+
+                        await _context.SaveChangesAsync();
+
+                        roleSpecificId = newActor.Id;
                     }
 
                     break;
                 case UserRole.Entertainment:
+                    var existingEnter = await _context.Entertainments.FirstOrDefaultAsync(a => a.UserId == userId);
+                    if (existingEnter == null)
+                    {
+                        var newEnter = new Entertainment
+                        {
+                            UserId = userId
+                        };
+
+                        _context.Entertainments.Add(newEnter);
+
+                        await _context.SaveChangesAsync();
+
+                        roleSpecificId = newEnter.Id;
+                    }
                     break;
                 default: break;
             }
@@ -135,7 +157,7 @@ public class UserService : IUserService
             await _context.SaveChangesAsync();
 
             response.Success = true;
-            response.Data = userId;
+            response.Data = roleSpecificId;
 
             return response;
         }

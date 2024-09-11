@@ -91,7 +91,7 @@ public class ActorService : IActorService
         }
     }
 
-    public async Task<ServiceResponse<int>> UpdateActorProfile(UpdateActorProfileRequestDto model)
+    public async Task<ServiceResponse<int>> UpdateActorProfile(int userId, int actorId, UpdateActorProfileRequestDto model)
     {
         var response = new ServiceResponse<int>();
 
@@ -104,7 +104,7 @@ public class ActorService : IActorService
                     .ThenInclude(a => a.Education)
                 .Include(u => u.Actor)
                     .ThenInclude(a => a.Links)
-                .FirstOrDefaultAsync(u => u.Id == model.UserId && u.Actor.Id == model.ActorId);
+                .FirstOrDefaultAsync(u => u.Id == userId && u.Actor.Id == actorId);
 
             // 1. check if user and actor data is exist
             if (existingUserWithActor == null || existingUserWithActor.Actor == null)
@@ -191,7 +191,7 @@ public class ActorService : IActorService
             response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
             response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
 
-            _logService.LogError("EXCEPTION", ex.Message, $"user id: {model.UserId}");
+            _logService.LogError("EXCEPTION", ex.Message, $"user id: {userId}");
 
             return response;
         }
@@ -255,7 +255,7 @@ public class ActorService : IActorService
         }
     }
 
-    public async Task<ServiceResponse<int>> AddActorDemoStar(AddActorDemoStarDto model)
+    public async Task<ServiceResponse<int>> AddActorDemoStar(int userId, int actorId, AddActorDemoStarDto model)
     {
         var response = new ServiceResponse<int>();
 
@@ -265,7 +265,7 @@ public class ActorService : IActorService
         {
             var existingUserWithActor = await _context.Users
                 .Include(u => u.Actor)
-                .FirstOrDefaultAsync(u => u.Id == model.UserId);
+                .FirstOrDefaultAsync(u => u.Id == userId && u.Actor.Id == actorId);
 
             // 1. check if user and actor data is exist
             if (existingUserWithActor == null || existingUserWithActor.Actor == null)
@@ -294,6 +294,8 @@ public class ActorService : IActorService
                 Url = model.Url
             };
 
+            _context.ActorDemoStars.Add(newActorDemoStar);
+
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
@@ -309,14 +311,14 @@ public class ActorService : IActorService
             response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
             response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
 
-            _logService.LogError("EXCEPTION", ex.Message, $"user id: {model.UserId}");
+            _logService.LogError("EXCEPTION", ex.Message, $"user id: {userId} actor id: {actorId}");
 
             return response;
         }
     }
 
 
-    public async Task<ServiceResponse<int>> UpdateActorDemoStar(UpdateActorDemoStarDto model)
+    public async Task<ServiceResponse<int>> UpdateActorDemoStar(int userId, int actorId, UpdateActorDemoStarDto model)
     {
         var response = new ServiceResponse<int>();
 
@@ -327,7 +329,7 @@ public class ActorService : IActorService
             var existingUserWithActor = await _context.Users
                 .Include(u => u.Actor)
                     .ThenInclude(a => a.DemoStars)
-                .FirstOrDefaultAsync(u => u.Id == model.UserId);
+                .FirstOrDefaultAsync(u => u.Id == userId && u.Actor.Id == actorId);
 
             // 1. check if user and actor data is exist
             if (existingUserWithActor == null || existingUserWithActor.Actor == null)
@@ -379,13 +381,13 @@ public class ActorService : IActorService
             response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
             response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
 
-            _logService.LogError("EXCEPTION", ex.Message, $"user id: {model.UserId} , actor demo star id: {model.Id}");
+            _logService.LogError("EXCEPTION", ex.Message, $"user id: {userId} , actor demo star id: {model.Id}");
 
             return response;
         }
     }
 
-    public async Task<ServiceResponse<int>> DeleteActorDemoStar(int id, int userId)
+    public async Task<ServiceResponse<int>> DeleteActorDemoStar(int userId, int actorId, int demoStarId)
     {
         var response = new ServiceResponse<int>();
 
@@ -396,7 +398,7 @@ public class ActorService : IActorService
             var existingUserWithActor = await _context.Users
                 .Include(u => u.Actor)
                     .ThenInclude(a => a.DemoStars)
-                .FirstOrDefaultAsync(u => u.Id == userId);
+                .FirstOrDefaultAsync(u => u.Id == userId && u.Actor.Id == actorId);
 
             // 1. check if user and actor data is exist
             if (existingUserWithActor == null || existingUserWithActor.Actor == null)
@@ -417,7 +419,7 @@ public class ActorService : IActorService
             }
 
             var existingDemoStar = await _context.ActorDemoStars
-                    .FirstOrDefaultAsync(ds => ds.Id == id);
+                    .FirstOrDefaultAsync(ds => ds.Id == demoStarId);
 
             // 3. check if DemoStar exists
             if (existingDemoStar == null)
@@ -435,7 +437,7 @@ public class ActorService : IActorService
             await transaction.CommitAsync();
 
             response.Success = true;
-            response.Data = id;
+            response.Data = demoStarId;
             return response;
         }
         catch (Exception ex)
@@ -446,9 +448,10 @@ public class ActorService : IActorService
             response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
             response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
 
-            _logService.LogError("EXCEPTION", ex.Message, $"user id: {userId} , actor demo star id: {id}");
+            _logService.LogError("EXCEPTION", ex.Message, $"user id: {userId} , actor demo star id: {demoStarId}");
 
             return response;
         }
     }
+
 }

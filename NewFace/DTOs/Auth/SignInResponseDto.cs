@@ -8,5 +8,6 @@ public class SignInResponseDto
     public string Email { get; set; } = string.Empty;
     public string token { get; set; } = string.Empty;
     public string role { get; set; } = string.Empty;
-
+    public int? actorId { get; set; }  
+    public int? enterId { get; set; } 
 }

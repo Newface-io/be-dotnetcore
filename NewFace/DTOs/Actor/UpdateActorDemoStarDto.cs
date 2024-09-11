@@ -6,8 +6,6 @@ public class UpdateActorDemoStarDto
 {
     [Required]
     public int Id { get; set; } // ActorDemoStar ID
-    [Required]
-    public int UserId { get; set; } // user id
 
     [StringLength(100)]
     public string Title { get; set; } = string.Empty; // 제목

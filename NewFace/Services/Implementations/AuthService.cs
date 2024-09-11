@@ -152,6 +152,7 @@ public class AuthService : IAuthService
             // 4. get role
             var userRole = user.UserRoles.FirstOrDefault()?.Role ?? string.Empty;
 
+            // 5. Prepare response data
             response.Data = new SignInResponseDto()
             {
                 id = user.Id,
@@ -159,6 +160,23 @@ public class AuthService : IAuthService
                 token = token,
                 role = userRole
             };
+
+            // 6. Set specific ID based on role
+            switch (userRole)
+            {
+                case NewFace.Common.Constants.UserRole.Actor:
+                    response.Data.actorId = await _context.Actors
+                        .Where(a => a.UserId == user.Id)
+                        .Select(a => a.Id)
+                        .FirstOrDefaultAsync();
+                    break;
+                case NewFace.Common.Constants.UserRole.Entertainment:
+                    response.Data.enterId = await _context.Entertainments
+                        .Where(e => e.UserId == user.Id)
+                        .Select(e => e.Id)
+                        .FirstOrDefaultAsync();
+                    break;
+            }
 
             return response;
         }

@@ -4,8 +4,6 @@ namespace NewFace.DTOs.Actor;
 
 public class UpdateActorProfileRequestDto
 {
-    public int UserId { get; set; }
-    public int ActorId { get; set; }
 
     [StringLength(100)]
     public string Name { get; set; } = string.Empty; // user
