@@ -151,8 +151,13 @@ public class AuthService : IAuthService
             // 3. get role
             var userRole = user.UserRoles.FirstOrDefault()?.Role ?? string.Empty;
 
-
-            
+            // 6.Prepare response data
+            response.Data = new SignInResponseDto()
+            {
+                id = user.Id,
+                Email = user.Email,
+                role = userRole
+            };
 
             // 4. Set specific ID based on role
             switch (userRole)
@@ -182,14 +187,7 @@ public class AuthService : IAuthService
                     break;
             }
 
-            // 6.Prepare response data
-            response.Data = new SignInResponseDto()
-            {
-                id = user.Id,
-                Email = user.Email,
-                token = token,
-                role = userRole
-            };
+            response.Data.token = token;
 
             return response;
         }
