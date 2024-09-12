@@ -143,8 +143,8 @@ namespace NewFace.Controllers
         }
 
         [SwaggerOperation(Summary = "배우 사진 그룹 목록")]
-        [HttpGet("image/{actorId}")]
-        public async Task<IActionResult> GetActorImagesByGroup([FromRoute] int actorId, int groupId)
+        [HttpGet("image/{actorId}/group/{groupId}")]
+        public async Task<IActionResult> GetActorImagesByGroup([FromRoute] int actorId, [FromRoute]  int groupId)
         {
 
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
