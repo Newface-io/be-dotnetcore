@@ -8,4 +8,6 @@ public interface IFileService
 {
     Task<List<UserFileInfo>> GetUserFilesByType(int userId, string type);
     Task<bool> UploadFiles(FileUploadRequest request);
+    Task<string> UploadImageAndGetUrl(IFormFile file, string relativePath);
+    bool IsAllowedImageFileType(string fileExtension);
 }

@@ -124,5 +124,77 @@ namespace NewFace.Controllers
             return Ok(response);
         }
 
+        [SwaggerOperation(Summary = "배우 사진 목록")]
+        [HttpGet("image/{actorId}")]
+        public async Task<IActionResult> GetActorImages([FromRoute] int actorId)
+        {
+
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+
+            var response = await _actorService.GetActorImages(userId, actorId);
+
+            if (!response.Success)
+            {
+                return StatusCode(500, response);
+            }
+
+            return Ok(response);
+
+        }
+
+        [SwaggerOperation(Summary = "배우 사진 그룹 목록")]
+        [HttpGet("image/{actorId}")]
+        public async Task<IActionResult> GetActorImagesByGroup([FromRoute] int actorId, int groupId)
+        {
+
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+
+            var response = await _actorService.GetActorImagesByGroup(userId, actorId, groupId);
+
+            if (!response.Success)
+            {
+                return StatusCode(500, response);
+            }
+
+            return Ok(response);
+
+        }
+
+
+        [SwaggerOperation(Summary = "배우 사진 업로드")]
+        [HttpPost("image/{actorId}")]
+        public async Task<IActionResult> UploadActorImages([FromRoute] int actorId, [FromForm] UploadActorImagesRequestDto model)
+        {
+
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+
+            var response = await _actorService.UploadActorImages(userId, actorId, model);
+
+            if (!response.Success)
+            {
+                return StatusCode(500, response);
+            }
+
+            return Ok(response);
+
+        }
+
+        [SwaggerOperation(Summary = "배우 사진 그룹 삭제")]
+        [HttpDelete("image/{actorId}")]
+        public async Task<IActionResult> DeleteActorImages([FromRoute] int actorId, [FromForm] List<int> groupIds)
+        {
+
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+
+            var response = await _actorService.DeleteActorImages(userId, actorId, groupIds);
+
+            if (!response.Success)
+            {
+                return StatusCode(500, response);
+            }
+
+            return Ok(response);
+
+        }
     }
 }

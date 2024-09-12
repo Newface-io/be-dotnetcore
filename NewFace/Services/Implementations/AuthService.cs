@@ -100,7 +100,7 @@ public class AuthService : IAuthService
             response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
             response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
 
-            _logService.LogError("EXCEPTION", ex.Message, "ip: ");
+            _logService.LogError("EXCEPTION: SignUp", ex.Message, "ip: ");
 
             return response;
         }
@@ -198,7 +198,7 @@ public class AuthService : IAuthService
             response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
             response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
 
-            _logService.LogError("EXCEPTION", ex.Message, "ip: ");
+            _logService.LogError("EXCEPTION: SignIn", ex.Message, "ip: ");
 
             return response;
         }
@@ -343,7 +343,7 @@ public class AuthService : IAuthService
             response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
             response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
 
-            _logService.LogError("EXCEPTION", ex.Message, "ip: ");
+            _logService.LogError("EXCEPTION: SendOTP", ex.Message, "ip: ");
 
             return response;
         }
@@ -396,7 +396,7 @@ public class AuthService : IAuthService
             response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
             response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
 
-            _logService.LogError("EXCEPTION", ex.Message, "ip: ");
+            _logService.LogError("EXCEPTION: VerifyOTP", ex.Message, "ip: ");
 
             return response;
         }

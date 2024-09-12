@@ -54,7 +54,7 @@ public class UserService : IUserService
             response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
             response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
 
-            _logService.LogError("EXCEPTION", ex.Message, "ip: ");
+            _logService.LogError("EXCEPTION: DeleteUser", ex.Message, "ip: ");
 
             return response;
         }
@@ -185,7 +185,7 @@ public class UserService : IUserService
             response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
             response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
 
-            _logService.LogError("EXCEPTION", ex.Message, "ip: ");
+            _logService.LogError("EXCEPTION: SetUserRole", ex.Message, "ip: ");
 
             return response;
         }

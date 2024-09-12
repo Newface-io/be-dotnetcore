@@ -22,6 +22,7 @@ public class DataContext : DbContext
     public DbSet<ActorExperience> ActorExperiences { get; set; }
     public DbSet<ActorLink> ActorLinks { get; set; }
     public DbSet<ActorDemoStar> ActorDemoStars { get; set; }
+    public DbSet<ActorImage> ActorImages { get; set; }
     #endregion
 
     public DbSet<Entertainment> Entertainments { get; set; }

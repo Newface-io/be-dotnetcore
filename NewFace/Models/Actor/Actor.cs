@@ -32,4 +32,5 @@ public class Actor
     public virtual ICollection<ActorEducation> Education { get; set; } = new HashSet<ActorEducation>(); // 학력사항
     public virtual ICollection<ActorLink> Links { get; set; } = new HashSet<ActorLink>(); // SNS 링크
     public virtual ICollection<ActorDemoStar> DemoStars { get; set; } = new HashSet<ActorDemoStar>(); // 데모스타
+    public virtual ICollection<ActorImage> Images { get; set; } = new HashSet<ActorImage>(); // 이미지
 }
