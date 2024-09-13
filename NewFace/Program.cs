@@ -18,6 +18,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1_auth", new OpenApiInfo { Title = "Auth API", Version = "v1" });
+    c.SwaggerDoc("v1_home", new OpenApiInfo { Title = "Home API", Version = "v1" });
     c.SwaggerDoc("v1_user", new OpenApiInfo { Title = "User API", Version = "v1" });
     c.SwaggerDoc("v1_actor", new OpenApiInfo { Title = "Actor API", Version = "v1" });
     c.SwaggerDoc("v1_entertainment", new OpenApiInfo { Title = "Entertainment API", Version = "v1" });
@@ -77,6 +78,7 @@ builder.Services.AddCors(options =>
 
 // Register services
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IHomeService, HomeService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IActorService, ActorService>();
 builder.Services.AddScoped<IFileService, FileService>();
@@ -132,6 +134,7 @@ app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1_auth/swagger.json", "Auth");
+    c.SwaggerEndpoint("/swagger/v1_home/swagger.json", "Home");
     c.SwaggerEndpoint("/swagger/v1_user/swagger.json", "User");
     c.SwaggerEndpoint("/swagger/v1_actor/swagger.json", "Actor");
     c.SwaggerEndpoint("/swagger/v1_entertainment/swagger.json", "Entertainment");
