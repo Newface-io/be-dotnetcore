@@ -707,7 +707,158 @@ public class ActorService : IActorService
 
     #endregion
 
+    #region 4. experience
 
+    public async Task<ServiceResponse<GetActorExperiencesResponseDto>> GetActorExperiences(int userId, int actorId)
+    {
+        var response = new ServiceResponse<GetActorExperiencesResponseDto>();
 
+        try
+        {
+            var existingUserWithActor = await _context.Users
+                .Include(u => u.Actor)
+                .FirstOrDefaultAsync(u => u.Id == userId && u.Actor.Id == actorId);
+
+            if (existingUserWithActor == null || existingUserWithActor.Actor == null)
+            {
+                response.Success = false;
+                response.Code = MessageCode.Custom.NOT_FOUND_USER.ToString();
+                response.Message = MessageCode.CustomMessages[MessageCode.Custom.NOT_FOUND_USER];
+                return response;
+            }
+
+            var experiences = await _context.ActorExperiences
+                .Where(ae => ae.ActorId == actorId)
+                .Select(ae => new ActorExperiences
+                {
+                    ExperienceId = ae.Id,
+                    Category = ae.Category,
+                    WorkTitle = ae.WorkTitle,
+                    Role = ae.Role,
+                    RoleName = ae.RoleName,
+                    StartDate = ae.StartDate,
+                    EndDate = ae.EndDate,
+                    CreatedDate = ae.CreatedDate,
+                    LastUpdated = ae.LastUpdated
+                })
+                .ToListAsync();
+
+            response.Success = true;
+            response.Data = new GetActorExperiencesResponseDto
+            {
+                ActorId = actorId,
+                ActorExperiences = experiences
+            };
+        }
+        catch (Exception ex)
+        {
+            response.Success = false;
+            response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
+            response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
+
+            _logService.LogError("EXCEPTION: GetActorExperiences", ex.Message, $"user id: {userId}, actor id: {actorId}");
+        }
+
+        return response;
+    }
+
+    public async Task<ServiceResponse<bool>> UpdateActorExperiences(int userId, int actorId, UpdateActorExperiencesRequestDto model)
+    {
+        var response = new ServiceResponse<bool>();
+
+        try
+        {
+            var existingUserWithActor = await _context.Users
+                .Include(u => u.Actor)
+                .FirstOrDefaultAsync(u => u.Id == userId && u.Actor.Id == actorId);
+
+            if (existingUserWithActor == null || existingUserWithActor.Actor == null)
+            {
+                response.Success = false;
+                response.Code = MessageCode.Custom.NOT_FOUND_USER.ToString();
+                response.Message = MessageCode.CustomMessages[MessageCode.Custom.NOT_FOUND_USER];
+                return response;
+            }
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                // 1. Get existing experiences
+                var existingExperiences = await _context.ActorExperiences
+                    .Where(ae => ae.ActorId == actorId)
+                    .ToListAsync();
+
+                // 2. Process each experience in the request
+                foreach (var experienceDto in model.UpdateActorExperiences)
+                {
+                    if (experienceDto.ExperienceId == 0)
+                    {
+                        // Create new experience
+                        var newExperience = new ActorExperience
+                        {
+                            ActorId = actorId,
+                            Category = experienceDto.Category,
+                            WorkTitle = experienceDto.WorkTitle,
+                            Role = experienceDto.Role,
+                            RoleName = experienceDto.RoleName,
+                            StartDate = experienceDto.StartDate,
+                            EndDate = experienceDto.EndDate
+                        };
+                        await _context.ActorExperiences.AddAsync(newExperience);
+                    }
+                    else
+                    {
+                        // Update existing experience
+                        var existingExperience = existingExperiences.FirstOrDefault(e => e.Id == experienceDto.ExperienceId);
+                        if (existingExperience != null)
+                        {
+                            existingExperience.Category = experienceDto.Category;
+                            existingExperience.WorkTitle = experienceDto.WorkTitle;
+                            existingExperience.Role = experienceDto.Role;
+                            existingExperience.RoleName = experienceDto.RoleName;
+                            existingExperience.StartDate = experienceDto.StartDate;
+                            existingExperience.EndDate = experienceDto.EndDate;
+                        }
+                    }
+                }
+
+                // 3. Remove experiences not in the request
+                var experienceIdsToKeep = model.UpdateActorExperiences
+                    .Where(e => e.ExperienceId != 0)
+                    .Select(e => e.ExperienceId)
+                    .ToList();
+                var experiencesToRemove = existingExperiences
+                    .Where(e => !experienceIdsToKeep.Contains(e.Id))
+                    .ToList();
+                _context.ActorExperiences.RemoveRange(experiencesToRemove);
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                response.Success = true;
+                response.Data = true;
+            }
+            catch (Exception ex)
+            {
+                _logService.LogError("EXCEPTION: UpdateActorExperiences1", ex.Message, $"user id: {userId}, actor id: {actorId}");
+
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+        catch (Exception ex)
+        {
+            response.Success = false;
+            response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
+            response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
+
+            _logService.LogError("EXCEPTION: UpdateActorExperiences2", ex.Message, $"user id: {userId}, actor id: {actorId}");
+        }
+
+        return response;
+    }
+
+    #endregion
 
 }

@@ -23,4 +23,10 @@ public interface IActorService
     Task<ServiceResponse<bool>> UploadActorImages(int userId, int actorId, UploadActorImagesRequestDto model);
     Task<ServiceResponse<bool>> DeleteActorImages(int userId, int actorId, List<int> groupIds);
     #endregion
+
+    #region experience
+
+    Task<ServiceResponse<GetActorExperiencesResponseDto>> GetActorExperiences(int userId, int actorId);
+    Task<ServiceResponse<bool>> UpdateActorExperiences(int userId, int actorId, UpdateActorExperiencesRequestDto model);
+    #endregion
 }

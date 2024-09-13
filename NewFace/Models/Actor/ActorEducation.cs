@@ -29,5 +29,7 @@ public class ActorEducation
 
     [StringLength(100)]
     public string Major { get; set; } = string.Empty; // 전공
+    public DateTime CreatedDate { get; set; } = DateTime.Now;
+    public DateTime LastUpdated { get; set; } = DateTime.Now;
 
 }

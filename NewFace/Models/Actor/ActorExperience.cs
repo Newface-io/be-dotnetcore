@@ -16,7 +16,7 @@ public class ActorExperience
     public virtual Actor Actor { get; set; } = null!;
 
     [Required]
-    [StringLength(50)]
+    [StringLength(10)]
     public string Category { get; set; } = string.Empty;
 
     [Required]
@@ -24,9 +24,14 @@ public class ActorExperience
     public string WorkTitle { get; set; } = string.Empty;
 
     [Required]
-    [StringLength(100)]
+    [StringLength(10)]
     public string Role { get; set; } = string.Empty;
+    
+    [StringLength(100)]
+    public string RoleName { get; set; } = string.Empty;
 
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
+    public DateTime CreatedDate { get; set; } = DateTime.Now;
+    public DateTime LastUpdated { get; set; } = DateTime.Now;
 }

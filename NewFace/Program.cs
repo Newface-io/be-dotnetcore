@@ -4,6 +4,8 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using NewFace.Data;
 using NewFace.Services;
+using Swashbuckle.AspNetCore.SwaggerGen;
+using System.Reflection;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,7 +16,10 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Your API", Version = "v1" });
+    c.SwaggerDoc("v1_auth", new OpenApiInfo { Title = "Auth API", Version = "v1" });
+    c.SwaggerDoc("v1_user", new OpenApiInfo { Title = "User API", Version = "v1" });
+    c.SwaggerDoc("v1_actor", new OpenApiInfo { Title = "Actor API", Version = "v1" });
+    c.SwaggerDoc("v1_entertainment", new OpenApiInfo { Title = "Entertainment API", Version = "v1" });
 
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -41,6 +46,15 @@ builder.Services.AddSwaggerGen(c =>
             },
             new List<string>()
         }
+    });
+
+    // 컨트롤러별로 API를 분리하기 위한 설정
+    c.DocInclusionPredicate((docName, apiDesc) =>
+    {
+        if (!apiDesc.TryGetMethodInfo(out MethodInfo methodInfo)) return false;
+
+        var controllerName = methodInfo.DeclaringType.Name.ToLower().Replace("controller", "");
+        return docName.ToLower().Contains(controllerName);
     });
 
     c.EnableAnnotations();
@@ -101,7 +115,7 @@ builder.Services.AddAuthentication(options =>
 
 var app = builder.Build();
 
-DatabaseManagementService.MigrationInitialisation(app);
+//DatabaseManagementService.MigrationInitialisation(app);
 
 // Configure the HTTP request pipeline.
 //if (app.Environment.IsDevelopment())
@@ -111,7 +125,13 @@ DatabaseManagementService.MigrationInitialisation(app);
 //}
 
 app.UseSwagger();
-app.UseSwaggerUI();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1_auth/swagger.json", "Auth");
+    c.SwaggerEndpoint("/swagger/v1_user/swagger.json", "User");
+    c.SwaggerEndpoint("/swagger/v1_actor/swagger.json", "Actor");
+    c.SwaggerEndpoint("/swagger/v1_entertainment/swagger.json", "Entertainment");
+});
 
 app.UseHttpsRedirection();
 

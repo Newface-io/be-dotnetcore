@@ -20,4 +20,6 @@ public class ActorLink
 
     [Required]
     public string Url { get; set; } = string.Empty;
+    public DateTime CreatedDate { get; set; } = DateTime.Now;
+    public DateTime LastUpdated { get; set; } = DateTime.Now;
 }
