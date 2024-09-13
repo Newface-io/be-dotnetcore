@@ -1,5 +1,6 @@
 ﻿using NewFace.Common.Constants;
 using NewFace.Data;
+using NewFace.DTOs.User;
 using NewFace.Models.Actor;
 using NewFace.Models.Entertainment;
 using NewFace.Responses;
@@ -189,6 +190,116 @@ public class UserService : IUserService
 
             return response;
         }
+    }
+
+    public async Task<ServiceResponse<IGetMyPageInfoResponseDto>> GetMyPageInfo(int userId, string role, int? roleSpecificId)
+    {
+        var response = new ServiceResponse<IGetMyPageInfoResponseDto>();
+
+        try
+        {
+            switch (role)
+            {
+                case NewFace.Common.Constants.UserRole.Actor:
+
+                    if (!roleSpecificId.HasValue)
+                    {
+                        response.Success = false;
+                        response.Code = MessageCode.Custom.NOT_FOUND_USER.ToString();
+                        response.Message = MessageCode.CustomMessages[MessageCode.Custom.NOT_FOUND_USER];
+                        return response;
+                    }
+
+                    var actorUser = await _context.Users
+                        .Include(u => u.Actor)
+                        .FirstOrDefaultAsync(u => u.Id == userId && u.Actor.Id == roleSpecificId.Value);
+
+                    if (actorUser == null || actorUser.Actor == null)
+                    {
+                        response.Success = false;
+                        response.Code = MessageCode.Custom.NOT_FOUND_USER.ToString();
+                        response.Message = MessageCode.CustomMessages[MessageCode.Custom.NOT_FOUND_USER];
+                        return response;
+                    }
+
+                    response.Data = new ActorMyPageInfoDto
+                    {
+                        UserId = actorUser.Id,
+                        ActorId = actorUser.Actor.Id,
+                        Name = actorUser.Name,
+                        Email = actorUser.Email,
+                        Phone = actorUser.Phone
+                    };
+
+                    break;
+
+                case NewFace.Common.Constants.UserRole.Entertainment:
+
+                    if (!roleSpecificId.HasValue)
+                    {
+                        response.Success = false;
+                        response.Code = MessageCode.Custom.NOT_FOUND_USER.ToString();
+                        response.Message = MessageCode.CustomMessages[MessageCode.Custom.NOT_FOUND_USER];
+                        return response;
+                    }
+
+                    var enterUser = await _context.Users
+                        .Include(u => u.EntertainmentProfessional)
+                        .FirstOrDefaultAsync(u => u.Id == userId && u.EntertainmentProfessional.Id == roleSpecificId.Value);
+
+                    if (enterUser == null || enterUser.EntertainmentProfessional == null)
+                    {
+                        response.Success = false;
+                        response.Code = MessageCode.Custom.NOT_FOUND_USER.ToString();
+                        response.Message = MessageCode.CustomMessages[MessageCode.Custom.NOT_FOUND_USER];
+                        return response;
+                    }
+
+                    response.Data = new EnterMyPageInfoDto
+                    {
+                        UserId = enterUser.Id,
+                        EnterId = enterUser.EntertainmentProfessional.Id,
+                        Name = enterUser.Name,
+                        Email = enterUser.Email,
+                        Phone = enterUser.Phone
+                    };
+                    break;
+
+                default: // Common User
+                    var commonUser = await _context.Users
+                        .FirstOrDefaultAsync(u => u.Id == userId);
+
+                    if (commonUser == null)
+                    {
+                        response.Success = false;
+                        response.Code = MessageCode.Custom.NOT_FOUND_USER.ToString();
+                        response.Message = MessageCode.CustomMessages[MessageCode.Custom.NOT_FOUND_USER];
+                        return response;
+                    }
+
+                    response.Data = new CommonMyPageInfoDto
+                    {
+                        UserId = commonUser.Id,
+                        Name = commonUser.Name,
+                        Email = commonUser.Email,
+                        Phone = commonUser.Phone
+                    };
+
+                    break;
+            }
+
+            response.Success = true;
+        }
+        catch (Exception ex)
+        {
+            response.Success = false;
+            response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
+            response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
+
+            _logService.LogError("EXCEPTION: GetMyPageInfo", ex.Message, $"user id: {userId}, role: {role}, roleSpecificId: {roleSpecificId}");
+        }
+
+        return response;
     }
 
     private bool IsValidRole(string role)

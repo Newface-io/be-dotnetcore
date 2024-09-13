@@ -2,7 +2,9 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using NewFace.Common.Constants;
+using NewFace.DTOs.User;
 using NewFace.Filters;
+using NewFace.Responses;
 using NewFace.Services;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Security.Claims;
@@ -70,5 +72,49 @@ namespace NewFace.Controllers
 
             return Ok(response);
         }
+
+        [SwaggerOperation(Summary = "마이페이지 정보 조회")]
+        [HttpGet("mypage")]
+        public async Task<IActionResult> GetMyPageInfo()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            var roleClaim = User.FindFirst(ClaimTypes.Role);
+
+            if (userIdClaim == null || roleClaim == null)
+            {
+                return Unauthorized(new { message = "Invalid token" });
+            }
+
+            var userId = int.Parse(userIdClaim.Value);
+            var userRole = roleClaim.Value;
+
+            int? roleSpecificId = null;
+
+            if (userRole == NewFace.Common.Constants.UserRole.Actor)
+            {
+                roleSpecificId = User.FindFirst("ActorId")?.Value != null ? int.Parse(User.FindFirst("ActorId").Value) : null;
+            }
+            else if (userRole == NewFace.Common.Constants.UserRole.Entertainment)
+            {
+                roleSpecificId = User.FindFirst("EnterId")?.Value != null ? int.Parse(User.FindFirst("EnterId").Value) : null;
+            }
+
+            var response = await _userService.GetMyPageInfo(userId, userRole, roleSpecificId);
+            return HandleResponse(response);
+        }
+
+        private IActionResult HandleResponse(ServiceResponse<IGetMyPageInfoResponseDto> response)
+        {
+            if (!response.Success)
+            {
+                if (response.Code == MessageCode.Custom.NOT_FOUND_USER.ToString())
+                    return NotFound(response);
+
+                return StatusCode(500, response);
+            }
+
+            return Ok(response);
+        }
+
     }
 }
