@@ -14,4 +14,5 @@ public class GetActorImages
     public int GroupId { get; set; }
     public int GroupOrder { get; set; }
     public int ImageCount { get; set; }
+    public bool IsMainImage { get; set; }
 }

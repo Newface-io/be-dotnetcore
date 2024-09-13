@@ -6,6 +6,7 @@ namespace NewFace.Services;
 
 public interface IAuthService
 {
+    int? GetUserIdFromToken();
     Task<ServiceResponse<int>> SignUp(SignUpRequestDto request);
     Task<ServiceResponse<SignInResponseDto>> SignIn(SignInRequestDto request);
     string CreateHashPassword(string password);
@@ -13,4 +14,5 @@ public interface IAuthService
     string GenerateJwtToken(User user, string role, int roleSpecificId = 0);
     Task<ServiceResponse<int>> SendOTP(int userId, string phone);
     Task<ServiceResponse<int>> VerifyOTP(int userId, string inputOTP);
+
 }

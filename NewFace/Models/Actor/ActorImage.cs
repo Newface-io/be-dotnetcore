@@ -27,6 +27,7 @@ public class ActorImage
     [StringLength(10)]
     public string FileType { get; set; } = string.Empty;
     public long FileSize { get; set; } = 0;
+    public bool IsMainImage { get; set; } = false;  // 대표 이미지 여부
     public bool IsDeleted { get; set; } = false;
     public DateTime CreatedDate { get; set; } = DateTime.Now;
     public DateTime LastUpdated { get; set; } = DateTime.Now;

@@ -181,12 +181,30 @@ namespace NewFace.Controllers
 
         [SwaggerOperation(Summary = "[포트폴리오 추가/수정] 배우 사진 그룹 삭제", Tags = new[] { "Actor/Image" })]
         [HttpDelete("image/{actorId}")]
-        public async Task<IActionResult> DeleteActorImages([FromRoute] int actorId, [FromForm] List<int> groupIds)
+        public async Task<IActionResult> DeleteActorImages([FromRoute] int actorId, [FromBody] List<int> groupIds)
         {
 
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
             var response = await _actorService.DeleteActorImages(userId, actorId, groupIds);
+
+            if (!response.Success)
+            {
+                return StatusCode(500, response);
+            }
+
+            return Ok(response);
+
+        }
+
+        [SwaggerOperation(Summary = "[포트폴리오 추가/수정] 배우 대표 사진 설정", Tags = new[] { "Actor/Image" })]
+        [HttpPut("image/{actorId}/setRepresentative/{groupId}")]
+        public async Task<IActionResult> SetActorMainImage([FromRoute] int actorId, [FromRoute] int groupId)
+        {
+
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+
+            var response = await _actorService.SetActorMainImage(userId, actorId, groupId);
 
             if (!response.Success)
             {
@@ -219,7 +237,7 @@ namespace NewFace.Controllers
 
         [SwaggerOperation(Summary = "[포트폴리오 추가/수정] 배우 작품활동 수정", Tags = new[] { "Actor/Experience" })]
         [HttpPut("experience/{actorId}")]
-        public async Task<IActionResult> UpdateActorExperiences([FromRoute] int actorId, [FromForm]UpdateActorExperiencesRequestDto model)
+        public async Task<IActionResult> UpdateActorExperiences([FromRoute] int actorId, [FromBody]UpdateActorExperiencesRequestDto model)
         {
 
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);

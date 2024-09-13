@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using NewFace.Data;
 using NewFace.Services;
+using NewFace.Services.Interfaces;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Reflection;
 using System.Text;
@@ -60,6 +61,9 @@ builder.Services.AddSwaggerGen(c =>
     c.EnableAnnotations();
 });
 
+// 다른 모든 곳에서 request context에 접근해야 할 때 필요
+builder.Services.AddHttpContextAccessor();
+
 // set CORS
 builder.Services.AddCors(options =>
 {
@@ -115,7 +119,7 @@ builder.Services.AddAuthentication(options =>
 
 var app = builder.Build();
 
-//DatabaseManagementService.MigrationInitialisation(app);
+DatabaseManagementService.MigrationInitialisation(app);
 
 // Configure the HTTP request pipeline.
 //if (app.Environment.IsDevelopment())

@@ -443,7 +443,8 @@ public class ActorService : IActorService
                     GroupId = g.Key,
                     FirstImage = g.OrderBy(ai => ai.GroupOrder).First(),    // group의 첫번째 이미지
                     ImageCount = g.Count(),                                 // group에서 이미지 개수
-                    ActorOrder = g.First().ActorOrder                       // group의 첫번째 이미지 Order (어차피 groupId가 같으면 ActorOrder는 동일)
+                    ActorOrder = g.First().ActorOrder,                      // group의 첫번째 이미지 Order (어차피 groupId가 같으면 ActorOrder는 동일)
+                    IsMainImage = g.Any(ai => ai.IsMainImage)
                 })
                 .OrderBy(g => g.ActorOrder)
                 .ToListAsync();
@@ -455,7 +456,8 @@ public class ActorService : IActorService
                 FileName = g.FirstImage.FileName,
                 GroupId = g.GroupId,
                 GroupOrder = g.FirstImage.GroupOrder,
-                ImageCount = g.ImageCount
+                ImageCount = g.ImageCount,
+                IsMainImage = g.IsMainImage
             }).ToList();
 
             var result = new GetActorImagesResponseDto
@@ -566,6 +568,9 @@ public class ActorService : IActorService
                 return response;
             }
 
+            var existingImages = await _context.ActorImages
+                                        .AnyAsync(ai => ai.ActorId == actorId && !ai.IsDeleted);
+
             var groupOrder = 1;
             var uploadedImages = new List<ActorImage>();
             var nextActorOrder = await GetNextActorOrderAsync(actorId);
@@ -592,19 +597,21 @@ public class ActorService : IActorService
                     {
                         ActorId = actorId,
                         GroupId = newGroupId,
-                        GroupOrder = groupOrder++,
+                        GroupOrder = groupOrder,
                         ActorOrder = nextActorOrder,
                         StoragePath = storagePath,
                         PublicUrl = string.Empty, // S3 올라가면 처리
                         FileName = Path.GetFileName(storagePath),
                         FileType = Path.GetExtension(file.FileName).TrimStart('.'),
                         FileSize = file.Length,
+                        IsMainImage = !existingImages && groupOrder == 1 ? true : false,
                         CreatedDate = DateTime.UtcNow,
                         LastUpdated = DateTime.UtcNow
                     };
 
                     uploadedImages.Add(actorImage);
 
+                    groupOrder++;
                 }
             }
 
@@ -667,6 +674,7 @@ public class ActorService : IActorService
                 foreach (var image in imagesToDelete)
                 {
                     image.IsDeleted = true;
+                    image.IsMainImage = false;
                     image.DeletedDate = DateTime.UtcNow;
                 }
             }
@@ -684,6 +692,82 @@ public class ActorService : IActorService
             response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
 
             _logService.LogError("EXCEPTION: DeleteActorImages", ex.Message, $"user id: {userId}, actor id: {actorId}");
+        }
+
+        return response;
+    }
+
+    public async Task<ServiceResponse<int>> SetActorMainImage(int userId, int actorId, int groupId)
+    {
+        var response = new ServiceResponse<int>();
+
+        try
+        {
+            var existingUserWithActor = await _context.Users
+                .Include(u => u.Actor)
+                .FirstOrDefaultAsync(u => u.Id == userId && u.Actor.Id == actorId);
+
+            if (existingUserWithActor == null || existingUserWithActor.Actor == null)
+            {
+                response.Success = false;
+                response.Code = MessageCode.Custom.NOT_FOUND_USER.ToString();
+                response.Message = MessageCode.CustomMessages[MessageCode.Custom.NOT_FOUND_USER];
+                return response;
+            }
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                // 1. 현재 배우의 모든 이미지에서 IsMain을 false로 설정
+                var currentActorImages = await _context.ActorImages
+                    .Where(ai => ai.ActorId == actorId && !ai.IsDeleted)
+                    .ToListAsync();
+
+                foreach (var image in currentActorImages)
+                {
+                    image.IsMainImage = false;
+                }
+
+                // 2. 선택된 그룹의 첫 번째 이미지를 찾아 IsMain을 true로 설정
+                var newMainImage = await _context.ActorImages
+                    .Where(ai => ai.ActorId == actorId && ai.GroupId == groupId && !ai.IsDeleted)
+                    .OrderBy(ai => ai.GroupOrder)
+                    .FirstOrDefaultAsync();
+
+                if (newMainImage == null)
+                {
+                    response.Success = false;
+                    response.Code = MessageCode.Custom.NOT_FOUND_DATA.ToString();
+                    response.Message = MessageCode.CustomMessages[MessageCode.Custom.NOT_FOUND_DATA];
+                    return response;
+                }
+
+                newMainImage.IsMainImage = true;
+
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+
+                response.Success = true;
+                response.Data = groupId;
+            }
+            catch (Exception ex)
+            {
+                response.Success = false;
+                response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
+                response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
+
+                _logService.LogError("EXCEPTION: SetActorMainImage1", ex.Message, $"user id: {userId}, actor id: {actorId}, group id: {groupId}");
+            }
+        }
+        catch (Exception ex)
+        {
+            response.Success = false;
+            response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
+            response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
+
+            _logService.LogError("EXCEPTION: SetActorMainImage2", ex.Message, $"user id: {userId}, actor id: {actorId}, group id: {groupId}");
         }
 
         return response;

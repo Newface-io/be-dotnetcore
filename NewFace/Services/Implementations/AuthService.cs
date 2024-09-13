@@ -22,13 +22,32 @@ public class AuthService : IAuthService
     private readonly IConfiguration _configuration;
     private readonly ILogService _logService;
     private readonly IDistributedCache _cache;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public AuthService(DataContext context, IConfiguration configuration, ILogService logService, IDistributedCache cache)
+    public AuthService(DataContext context, IConfiguration configuration, ILogService logService, IDistributedCache cache, IHttpContextAccessor httpContextAccessor)
     {
         _context = context;
         _logService = logService;
         _configuration = configuration;
         _cache = cache;
+        _httpContextAccessor = httpContextAccessor;
+    }
+
+    public int? GetUserIdFromToken()
+    {
+        var user = _httpContextAccessor.HttpContext?.User;
+        if (user?.Identity?.IsAuthenticated != true)
+        {
+            return null;
+        }
+
+        var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
+        {
+            return userId;
+        }
+
+        return null;
     }
 
     public async Task<ServiceResponse<int>> SignUp(SignUpRequestDto request)
