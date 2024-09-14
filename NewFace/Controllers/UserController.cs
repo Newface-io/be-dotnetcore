@@ -58,11 +58,6 @@ namespace NewFace.Controllers
         [Route("setUserRole")]
         public async Task<IActionResult> SetUserRole(int userId, string role)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
             var response = await _userService.SetUserRole(userId, role);
 
             if (!response.Success)
@@ -101,6 +96,24 @@ namespace NewFace.Controllers
 
             var response = await _userService.GetMyPageInfo(userId, userRole, roleSpecificId);
             return HandleResponse(response);
+        }
+
+        [HttpGet("mypage/edit")]
+        [SwaggerOperation(Summary = "회원정보 수정 페이지 조회")]
+        public async Task<IActionResult> GetUserProfile()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+
+            var userId = int.Parse(userIdClaim.Value);
+
+            var response = await _userService.GettUserInfoForEdit(userId);
+
+            if (!response.Success)
+            {
+                return StatusCode(500, response);
+            }
+
+            return Ok(response);
         }
 
         private IActionResult HandleResponse(ServiceResponse<IGetMyPageInfoResponseDto> response)

@@ -302,6 +302,47 @@ public class UserService : IUserService
         return response;
     }
 
+    public async Task<ServiceResponse<GetUserInfoForEditResponseDto>> GettUserInfoForEdit(int userId)
+    {
+        var response = new ServiceResponse<GetUserInfoForEditResponseDto>();
+
+        try
+        {
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null)
+            {
+                response.Success = false;
+                response.Code = MessageCode.Custom.NOT_FOUND_USER.ToString();
+                response.Message = MessageCode.CustomMessages[MessageCode.Custom.NOT_FOUND_USER];
+                return response;
+            }
+
+            var userProfileDto = new GetUserInfoForEditResponseDto
+            {
+                Name = user.Name,
+                BirthDate = user.BirthDate,
+                Gender = user.Gender,
+                Phone = user.Phone,
+                Email = user.Email
+            };
+
+            response.Success = true;
+            response.Data = userProfileDto;
+        }
+        catch (Exception ex)
+        {
+            response.Success = false;
+            response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
+            response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
+
+            _logService.LogError("EXCEPTION: GetUserProfile", ex.Message, $"user id: {userId}");
+        }
+
+        return response;
+    }
+
     private bool IsValidRole(string role)
     {
         return Common.Constants.UserRole.AllRoles.Contains(role);
