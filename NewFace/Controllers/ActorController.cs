@@ -58,7 +58,7 @@ namespace NewFace.Controllers
         }
 
         [SwaggerOperation(Summary = "[포트폴리오 추가/수정] 배우 데모스타 목록", Tags = new[] { "Actor/DemoStar" })]
-        [HttpGet("demostar/{actorId}")]
+        [HttpGet("demo-star/{actorId}")]
         public async Task<IActionResult> GetActorDemoStarList([FromRoute] int actorId)
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
@@ -75,7 +75,7 @@ namespace NewFace.Controllers
 
 
         [SwaggerOperation(Summary = "[포트폴리오 추가/수정] 배우 데모스타 추가", Tags = new[] { "Actor/DemoStar" })]
-        [HttpPost("demostar/{actorId}")]
+        [HttpPost("demo-star/{actorId}")]
         public async Task<IActionResult> AddActorDemoStar([FromRoute] int actorId, [FromBody] AddActorDemoStarDto model)
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
@@ -92,7 +92,7 @@ namespace NewFace.Controllers
 
 
         [SwaggerOperation(Summary = "[포트폴리오 추가/수정] 배우 데모스타 수정", Tags = new[] { "Actor/DemoStar" })]
-        [HttpPut("demostar/{actorId}")]
+        [HttpPut("demo-star/{actorId}")]
         public async Task<IActionResult> UpdateActorDemoStar([FromRoute] int actorId, [FromBody] UpdateActorDemoStarDto model)
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
@@ -109,7 +109,7 @@ namespace NewFace.Controllers
 
 
         [SwaggerOperation(Summary = "[포트폴리오 추가/수정] 배우 데모스타 삭제", Tags = new[] { "Actor/DemoStar" })]
-        [HttpDelete("demostar/{actorId}")]
+        [HttpDelete("demo-star/{actorId}")]
         public async Task<IActionResult> DeleteActorDemoStar([FromRoute] int actorId, int demoStarId)
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
