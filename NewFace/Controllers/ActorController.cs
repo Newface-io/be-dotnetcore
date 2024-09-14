@@ -12,7 +12,7 @@ namespace NewFace.Controllers
 
     // AuthenticateAndValidateActor : model validation / user id, actor id 체크
     [Authorize(Roles = NewFace.Common.Constants.UserRole.Actor)]
-    [Route("api/[controller]")]
+    [Route("api/actor")]
     [AuthenticateAndValidateActor]
     [ApiController]
     public class ActorController : ControllerBase
@@ -198,7 +198,7 @@ namespace NewFace.Controllers
         }
 
         [SwaggerOperation(Summary = "[포트폴리오 추가/수정] 배우 대표 사진 설정", Tags = new[] { "Actor/Image" })]
-        [HttpPut("image/{actorId}/setRepresentative/{groupId}")]
+        [HttpPut("image/{actorId}/set-representative/{groupId}")]
         public async Task<IActionResult> SetActorMainImage([FromRoute] int actorId, [FromRoute] int groupId)
         {
 

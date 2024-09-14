@@ -29,6 +29,7 @@ public class User
 
     [StringLength(5)]
     public string Gender { get; set; } = string.Empty; // 성별
+    public string ImageUrl { get; set; } = string.Empty; // 유저 이미지
 
     public DateTime CreatedDate { get; set; } = DateTime.Now;
     public DateTime LastUpdated { get; set; } = DateTime.Now;

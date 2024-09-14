@@ -6,7 +6,7 @@ using Swashbuckle.AspNetCore.Annotations;
 
 namespace NewFace.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/auth")]
     [ApiController]
     public class AuthController : ControllerBase
     {
@@ -66,7 +66,7 @@ namespace NewFace.Controllers
 
         [SwaggerOperation(Summary = "핸드폰 OTP 번호 발송")]
         [HttpPost]
-        [Route("sendOTP")]
+        [Route("send-otp")]
         public async Task<IActionResult> SendOTP(int userId, string phone)
         {
 
@@ -89,7 +89,7 @@ namespace NewFace.Controllers
 
         [SwaggerOperation(Summary = "핸드폰 OTP 번호 확인")]
         [HttpPost]
-        [Route("verifyOTP")]
+        [Route("verify-otp")]
         public async Task<IActionResult> VerifyOTP(int userId, string inputOTP)
         {
             if (!ModelState.IsValid)

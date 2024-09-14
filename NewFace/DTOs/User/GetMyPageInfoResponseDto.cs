@@ -9,6 +9,7 @@ public class ActorMyPageInfoDto : IGetMyPageInfoResponseDto
     public string Name { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;
+    public string ImageUrl { get; set; } = string.Empty;
 }
 
 public class EnterMyPageInfoDto : IGetMyPageInfoResponseDto
@@ -18,6 +19,7 @@ public class EnterMyPageInfoDto : IGetMyPageInfoResponseDto
     public string Name { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;
+    public string ImageUrl { get; set; } = string.Empty;
 }
 
 public class CommonMyPageInfoDto : IGetMyPageInfoResponseDto
@@ -26,4 +28,5 @@ public class CommonMyPageInfoDto : IGetMyPageInfoResponseDto
     public string Name { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;
+    public string ImageUrl { get; set; } = string.Empty;
 }

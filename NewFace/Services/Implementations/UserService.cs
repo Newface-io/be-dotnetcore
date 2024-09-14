@@ -12,12 +12,14 @@ public class UserService : IUserService
     private readonly DataContext _context;
     private readonly ILogService _logService;
     private readonly IAuthService _authService;
+    private readonly IFileService _fileService;
 
-    public UserService(DataContext context, ILogService logService, IAuthService authService)
+    public UserService(DataContext context, ILogService logService, IAuthService authService, IFileService fileService)
     {
         _context = context;
         _logService = logService;
         _authService = authService;
+        _fileService = fileService;
     }
 
     public async Task<ServiceResponse<bool>> DeleteUser(int userId)
@@ -228,7 +230,8 @@ public class UserService : IUserService
                         ActorId = actorUser.Actor.Id,
                         Name = actorUser.Name,
                         Email = actorUser.Email,
-                        Phone = actorUser.Phone
+                        Phone = actorUser.Phone,
+                        ImageUrl = actorUser.ImageUrl
                     };
 
                     break;
@@ -261,7 +264,8 @@ public class UserService : IUserService
                         EnterId = enterUser.EntertainmentProfessional.Id,
                         Name = enterUser.Name,
                         Email = enterUser.Email,
-                        Phone = enterUser.Phone
+                        Phone = enterUser.Phone,
+                        ImageUrl = enterUser.ImageUrl
                     };
                     break;
 
@@ -282,7 +286,8 @@ public class UserService : IUserService
                         UserId = commonUser.Id,
                         Name = commonUser.Name,
                         Email = commonUser.Email,
-                        Phone = commonUser.Phone
+                        Phone = commonUser.Phone,
+                        ImageUrl = commonUser.ImageUrl
                     };
 
                     break;
@@ -302,7 +307,7 @@ public class UserService : IUserService
         return response;
     }
 
-    public async Task<ServiceResponse<GetUserInfoForEditResponseDto>> GettUserInfoForEdit(int userId)
+    public async Task<ServiceResponse<GetUserInfoForEditResponseDto>> GetUserInfoForEdit(int userId)
     {
         var response = new ServiceResponse<GetUserInfoForEditResponseDto>();
 
@@ -338,6 +343,78 @@ public class UserService : IUserService
             response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
 
             _logService.LogError("EXCEPTION: GetUserProfile", ex.Message, $"user id: {userId}");
+        }
+
+        return response;
+    }
+
+    public async Task<ServiceResponse<bool>> UpdateUserInfoForEdit(int userId, UpdateUserInfoForEditResponseDto model)
+    {
+        var response = new ServiceResponse<bool>();
+
+        using var transaction = await _context.Database.BeginTransactionAsync();
+
+        try
+        {
+            var user = await _context.Users.FindAsync(userId);
+
+            if (user == null)
+            {
+                response.Success = false;
+                response.Code = MessageCode.Custom.NOT_FOUND_USER.ToString();
+                response.Message = MessageCode.CustomMessages[MessageCode.Custom.NOT_FOUND_USER];
+                return response;
+            }
+
+            // Update user information
+            user.Name = model.Name;
+            user.BirthDate = model.BirthDate;
+            user.Gender = model.Gender;
+            user.Phone = model.Phone;
+            user.Email = model.Email;
+            user.LastUpdated = DateTime.UtcNow;
+
+            string userImageRelativePath = Path.Combine("users", "image", userId.ToString());
+
+            // Handle image upload
+            if (model.Image != null)
+            {
+                string storagePath = await _fileService.UploadImageAndGetUrl(model.Image, userImageRelativePath);
+
+                if (!string.IsNullOrEmpty(storagePath))
+                {
+                    user.ImageUrl = storagePath;
+                }
+                else
+                {
+                    response.Success = false;
+                    response.Code = MessageCode.Custom.FAILED_FILE_UPLOAD.ToString();
+                    response.Message = MessageCode.CustomMessages[MessageCode.Custom.FAILED_FILE_UPLOAD];
+                    return response;
+                }
+            }
+            else if (!string.IsNullOrEmpty(user.ImageUrl))
+            {
+                // If no new image is provided and there's an existing image, delete it
+                await _fileService.DeleteFileAndEmptyFolder(user.ImageUrl);
+                user.ImageUrl = string.Empty;
+            }
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            response.Success = true;
+            response.Data = true;
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+
+            response.Success = false;
+            response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
+            response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
+
+            _logService.LogError("EXCEPTION: UpdateUserInfoForEdit", ex.Message, $"user id: {userId}");
         }
 
         return response;

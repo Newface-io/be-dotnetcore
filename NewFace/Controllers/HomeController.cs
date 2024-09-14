@@ -7,7 +7,7 @@ using Swashbuckle.AspNetCore.Annotations;
 namespace NewFace.Controllers
 {
     [AllowAnonymous]
-    [Route("api/[controller]")]
+    [Route("api/home")]
     [ApiController]
     public class HomeController : ControllerBase
     {

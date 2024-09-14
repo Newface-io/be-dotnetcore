@@ -13,7 +13,7 @@ namespace NewFace.Controllers
 {
     // AuthenticateAndValidateUser : model validation / user id 체크
     [Authorize]
-    [Route("api/[controller]")]
+    [Route("api/user")]
     [AuthenticateAndValidateUser]
     [ApiController]
     public class UserController : ControllerBase
@@ -53,11 +53,20 @@ namespace NewFace.Controllers
         }
 
 
-        [SwaggerOperation(Summary = "유저 Role 설정(일반 / 배우 / 엔터)")]
+        [SwaggerOperation(Summary = "유저 role 설정(일반 / 배우 / 엔터)")]
         [HttpPost]
-        [Route("setUserRole")]
-        public async Task<IActionResult> SetUserRole(int userId, string role)
+        [Route("user-role")]
+        public async Task<IActionResult> SetUserRole(string role)
         {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+
+            if (userIdClaim == null)
+            {
+                return Unauthorized(new { message = "Invalid token" });
+            }
+
+            var userId = int.Parse(userIdClaim.Value);
+
             var response = await _userService.SetUserRole(userId, role);
 
             if (!response.Success)
@@ -106,7 +115,25 @@ namespace NewFace.Controllers
 
             var userId = int.Parse(userIdClaim.Value);
 
-            var response = await _userService.GettUserInfoForEdit(userId);
+            var response = await _userService.GetUserInfoForEdit(userId);
+
+            if (!response.Success)
+            {
+                return StatusCode(500, response);
+            }
+
+            return Ok(response);
+        }
+
+        [HttpPut("mypage/edit")]
+        [SwaggerOperation(Summary = "회원정보 수정 페이지 업데이트")]
+        public async Task<IActionResult> UpdateUserInfoForEdit([FromBody] UpdateUserInfoForEditResponseDto model)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+
+            var userId = int.Parse(userIdClaim.Value);
+
+            var response = await _userService.UpdateUserInfoForEdit(userId, model);
 
             if (!response.Success)
             {

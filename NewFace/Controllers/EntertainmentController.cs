@@ -10,7 +10,7 @@ namespace NewFace.Controllers
     // AuthenticateAndValidateEntertainment : model validation / user id, enter id 체크
     [Authorize(Roles = NewFace.Common.Constants.UserRole.Entertainment)]
     [AuthenticateAndValidateEntertainment]
-    [Route("api/[controller]")]
+    [Route("api/enter")]
     [ApiController]
     public class EntertainmentController : ControllerBase
     {
