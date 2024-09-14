@@ -22,7 +22,6 @@ public class Actor
 
     public decimal? Height { get; set; } // 키
     public decimal? Weight { get; set; } // 몸무게
-    public string Gender { get; set; } = string.Empty; // 성별
 
     public string Bio { get; set; } = string.Empty; // 자기소개
     public DateTime CreatedDate { get; set; } = DateTime.Now;

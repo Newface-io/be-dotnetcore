@@ -25,6 +25,9 @@ public class User
     [StringLength(20)]
     public string Phone { get; set; } = string.Empty;
 
+    [StringLength(5)]
+    public string Gender { get; set; } = string.Empty; // 성별
+
     public DateTime CreatedDate { get; set; } = DateTime.Now;
     public DateTime LastUpdated { get; set; } = DateTime.Now;
     public bool IsDeleted { get; set; } = false;

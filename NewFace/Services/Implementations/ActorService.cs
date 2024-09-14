@@ -58,7 +58,7 @@ public class ActorService : IActorService
                 Height = user.Actor.Height?.ToString() ?? string.Empty,
                 Weight = user.Actor.Weight?.ToString() ?? string.Empty,
                 Bio = user.Actor.Bio ?? string.Empty,
-                Gender = user.Actor.Gender ?? string.Empty,
+                Gender = user.Gender ?? string.Empty,
 
                 Role = NewFace.Common.Constants.UserRole.Actor,
 
@@ -109,10 +109,11 @@ public class ActorService : IActorService
             }
 
             // Update User properties
-            if (existingUserWithActor.Name != model.Name || existingUserWithActor.Email != model.Email)
+            if (existingUserWithActor.Name != model.Name || existingUserWithActor.Email != model.Email || existingUserWithActor.Gender != model.Gender)
             {
                 existingUserWithActor.Name = model.Name;
                 existingUserWithActor.Email = model.Email;
+                existingUserWithActor.Gender = model.Gender;
                 existingUserWithActor.LastUpdated = DateTime.UtcNow;
                 _context.Users.Update(existingUserWithActor);
             }
@@ -120,13 +121,11 @@ public class ActorService : IActorService
             // Update Actor properties
             var existingActor = existingUserWithActor.Actor;
             if (existingActor.BirthDate != model.BirthDate ||
-                existingActor.Gender != model.Gender ||
                 existingActor.Height != model.Height ||
                 existingActor.Weight != model.Weight ||
                 existingActor.Bio != model.Bio)
             {
                 existingActor.BirthDate = model.BirthDate;
-                existingActor.Gender = model.Gender;
                 existingActor.Height = model.Height;
                 existingActor.Weight = model.Weight;
                 existingActor.Bio = model.Bio;
