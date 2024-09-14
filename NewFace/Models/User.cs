@@ -25,6 +25,8 @@ public class User
     [StringLength(20)]
     public string Phone { get; set; } = string.Empty;
 
+    public DateTime? BirthDate { get; set; } // 생년월일
+
     [StringLength(5)]
     public string Gender { get; set; } = string.Empty; // 성별
 

@@ -53,7 +53,7 @@ public class ActorService : IActorService
                 Email = user.Email,
                 Phone = user.Phone,
                 ActorId = user.Actor.Id,
-                BirthDate = user.Actor.BirthDate?.ToString("yyyy-MM-dd") ?? string.Empty,
+                BirthDate = user.BirthDate?.ToString("yyyy-MM-dd") ?? string.Empty,
                 Address = user.Actor.Address,
                 Height = user.Actor.Height?.ToString() ?? string.Empty,
                 Weight = user.Actor.Weight?.ToString() ?? string.Empty,
@@ -109,23 +109,22 @@ public class ActorService : IActorService
             }
 
             // Update User properties
-            if (existingUserWithActor.Name != model.Name || existingUserWithActor.Email != model.Email || existingUserWithActor.Gender != model.Gender)
+            if (existingUserWithActor.Name != model.Name || existingUserWithActor.Email != model.Email || existingUserWithActor.Gender != model.Gender || existingUserWithActor.BirthDate != model.BirthDate)
             {
                 existingUserWithActor.Name = model.Name;
                 existingUserWithActor.Email = model.Email;
                 existingUserWithActor.Gender = model.Gender;
+                existingUserWithActor.BirthDate = model.BirthDate;
                 existingUserWithActor.LastUpdated = DateTime.UtcNow;
                 _context.Users.Update(existingUserWithActor);
             }
 
             // Update Actor properties
             var existingActor = existingUserWithActor.Actor;
-            if (existingActor.BirthDate != model.BirthDate ||
-                existingActor.Height != model.Height ||
+            if (existingActor.Height != model.Height ||
                 existingActor.Weight != model.Weight ||
                 existingActor.Bio != model.Bio)
             {
-                existingActor.BirthDate = model.BirthDate;
                 existingActor.Height = model.Height;
                 existingActor.Weight = model.Weight;
                 existingActor.Bio = model.Bio;

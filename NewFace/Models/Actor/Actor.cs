@@ -15,8 +15,6 @@ public class Actor
     [JsonIgnore]
     public virtual User User { get; set; } = null!;
 
-    public DateTime? BirthDate { get; set; } // 생년월일
-
     [StringLength(255)]
     public string Address { get; set; } = string.Empty; // 주소
 
