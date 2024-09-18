@@ -12,11 +12,13 @@ public class HomeService : IHomeService
 {
     private readonly DataContext _context;
     private readonly ILogService _logService;
+    private readonly IMemoryManagementService _memoryManagementService;
 
-    public HomeService(DataContext context, ILogService logService)
+    public HomeService(DataContext context, ILogService logService, IMemoryManagementService memoryManagementService)
     {
         _context = context;
         _logService = logService;
+        _memoryManagementService = memoryManagementService;
     }
 
     public async Task<ServiceResponse<GetMainPageResponseDto>> GetMainPage()
@@ -46,7 +48,7 @@ public class HomeService : IHomeService
             var demoStarResponse = await GetDemoStars();
             if (demoStarResponse.Success)
             {
-                mainPageData.DemoStarData = demoStarResponse.Data;
+                mainPageData.DemoStarData = demoStarResponse.Data?? new DemoStarDataResponseDto { TotalCount = 0, DamoStars = new List<DemoStarItemDto>() };
             }
             else
             {
@@ -59,43 +61,43 @@ public class HomeService : IHomeService
         catch (Exception ex)
         {
             response.Success = false;
-            response.Message = "An error occurred while fetching main page data.";
-            _logService.LogError("GetMainPageData", ex.Message, ex.StackTrace);
+            response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
+            response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
+
+            _logService.LogError("GetMainPageData", ex.Message, ex.StackTrace ?? string.Empty) ;
         }
 
         return response;
     }
 
-    public async Task<ServiceResponse<DemoStarDataResponseDto>> GetDemoStars(string category = "", string sortBy = "", int page = 1, int limit = 20)
+    public async Task<ServiceResponse<DemoStarDataResponseDto>> GetDemoStars(string filter = "", string sortBy = "", int page = 1, int limit = 20)
     {
         var response = new ServiceResponse<DemoStarDataResponseDto>();
 
         try
         {
-            IQueryable<ActorDemoStar> query = _context.ActorDemoStars;
 
-            // 1. filter : category
-            if (!string.IsNullOrEmpty(category))
+            IQueryable<ActorDemoStar> query = _context.ActorDemoStars.AsNoTracking();
+
+            // 1. Filter
+            if (!string.IsNullOrEmpty(filter))
             {
-                query = query.Where(ds => ds.Category == category);
+                query = query.Where(ds => ds.Category == filter);
             }
 
             // 2. sortby
-            switch (sortBy.ToLower())
+            query = sortBy.ToLower() switch
             {
-                case "oldest":
-                    query = query.OrderBy(ds => ds.LastUpdated);
-                    break;
-                case "latest":
-                    query = query.OrderByDescending(ds => ds.LastUpdated);
-                    break;
-                default:
-                    query = query.OrderByDescending(ds => ds.Id);
-                    break;
-            }
+                "oldest" => query.OrderBy(ds => ds.LastUpdated),
+                "latest" => query.OrderByDescending(ds => ds.LastUpdated),
+                _ => query.OrderByDescending(ds => ds.Id)
+            };
 
             // 3. pagenation
-            var totalCount = await query.CountAsync();
+            var totalCount = await _context.ActorDemoStars
+                                        .Where(ds => string.IsNullOrEmpty(filter) || ds.Category == filter)
+                                        .CountAsync();
+
             var totalPages = (int)Math.Ceiling((double)totalCount / limit);
             var skip = (page - 1) * limit;
 
@@ -127,7 +129,98 @@ public class HomeService : IHomeService
             response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
             response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
 
-            _logService.LogError("GetDemoStarData", ex.Message, ex.StackTrace);
+            _logService.LogError("GetDemoStarData", ex.Message, ex.StackTrace ?? string.Empty);
+        }
+
+        return response;
+    }
+
+    public async Task<ServiceResponse<GetActorPortfolioResponseDto>> GetAllActorPortfolios(string filter = "", string sortBy = "", int page = 1, int limit = 50)
+    {
+        var allActors = await _memoryManagementService.GetOrSetCache("AllActorPortfolios", async () =>
+        {
+            return await _context.Actors
+                .Where(a => a.Images.Any(i => i.IsMainImage))
+                .Select(a => new ActorPortfolioDto
+                {
+                    ActorId = a.Id,
+                    Name = a.User.Name,
+                    BirthDate = a.User.BirthDate,
+                    Gender = a.User.Gender,
+                    Age = a.User.BirthDate.HasValue ? DateTime.Now.Year - a.User.BirthDate.Value.Year : null,
+                    CreatedDate = a.CreatedDate,
+                    LastUpdated = a.Images
+                        .Where(i => i.IsMainImage)
+                        .OrderBy(i => i.GroupOrder)
+                        .Select(i => i.LastUpdated)
+                        .FirstOrDefault(),
+                    MainImageUrl = a.Images
+                        .Where(i => i.IsMainImage)
+                        .Select(i => i.StoragePath)
+                        .FirstOrDefault() ?? string.Empty
+                })
+                .ToListAsync();
+        });
+
+        var response = new ServiceResponse<GetActorPortfolioResponseDto>();
+
+        try
+        {
+            // 필터링 적용
+            if (!string.IsNullOrEmpty(filter))
+            {
+                switch (filter.Trim().ToLower())
+                {
+                    case "male":
+                        allActors = allActors.Where(a => a.Gender == "male").ToList();
+                        break;
+                    case "female":
+                        allActors = allActors.Where(a => a.Gender == "female").ToList();
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            // 정렬 적용
+            switch (sortBy.ToLower())
+            {
+                case "age_asc":
+                    allActors = allActors.OrderBy(a => a.Age).ToList();
+                    break;
+                case "age_desc":
+                    allActors = allActors.OrderByDescending(a => a.Age).ToList();
+                    break;
+                case "updated_asc":
+                    allActors = allActors.OrderBy(a => a.LastUpdated).ToList();
+                    break;
+                case "updated_desc":
+                    allActors = allActors.OrderByDescending(a => a.LastUpdated).ToList();
+                    break;
+                default:
+                    allActors = allActors.OrderByDescending(a => a.CreatedDate).ToList();
+                    break;
+            }
+
+            var totalCount = allActors.Count;
+            var totalPages = (int)Math.Ceiling((double)totalCount / limit);
+            var pagedActors = allActors.Skip((page - 1) * limit).Take(limit).ToList();
+
+            response.Data = new GetActorPortfolioResponseDto
+            {
+                TotalCount = totalCount,
+                TotalPages = totalPages,
+                CurrentPage = page,
+                PageSize = limit,
+                Actors = pagedActors
+            };
+
+            response.Success = true;
+        }
+        catch (Exception ex)
+        {
+            response.Success = false;
+            response.Message = ex.Message;
         }
 
         return response;

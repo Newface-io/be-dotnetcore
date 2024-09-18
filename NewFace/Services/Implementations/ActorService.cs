@@ -12,12 +12,16 @@ public class ActorService : IActorService
     private readonly DataContext _context;
     private readonly ILogService _logService;
     private readonly IFileService _fileService;
+    private readonly IMemoryManagementService _memoryManagementService;
+
     
-    public ActorService(DataContext context, ILogService logService, IFileService fileService)
+
+    public ActorService(DataContext context, ILogService logService, IFileService fileService, IMemoryManagementService memoryManagementService)
     {
         _context = context;
         _logService = logService;
         _fileService = fileService;
+        _memoryManagementService = memoryManagementService;
     }
 
     #region 1. profile
@@ -569,6 +573,8 @@ public class ActorService : IActorService
             var existingImages = await _context.ActorImages
                                         .AnyAsync(ai => ai.ActorId == actorId && !ai.IsDeleted);
 
+            var isRemoveCache = !existingImages; // 존재하지 않으면 IsMainImage가 처리되므로 remove cache를 한다.
+
             var groupOrder = 1;
             var uploadedImages = new List<ActorImage>();
             var nextActorOrder = await GetNextActorOrderAsync(actorId);
@@ -618,6 +624,12 @@ public class ActorService : IActorService
 
             await transaction.CommitAsync();
 
+            if (isRemoveCache)
+            {
+                await _memoryManagementService.InvalidateCache("AllActorPortfolios");
+            }
+            
+
             response.Data = true;
             response.Success = true;
         }
@@ -642,6 +654,8 @@ public class ActorService : IActorService
 
         try
         {
+            var isRemoveCache = false;
+
             var existingUserWithActor = await _context.Users
                     .Include(u => u.Actor)
                     .FirstOrDefaultAsync(u => u.Id == userId && u.Actor.Id == actorId);
@@ -671,6 +685,11 @@ public class ActorService : IActorService
 
                 foreach (var image in imagesToDelete)
                 {
+                    if(image.IsMainImage == true)
+                    {
+                        isRemoveCache = true;
+                    }
+
                     image.IsDeleted = true;
                     image.IsMainImage = false;
                     image.DeletedDate = DateTime.UtcNow;
@@ -679,6 +698,11 @@ public class ActorService : IActorService
 
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
+
+            if (isRemoveCache)
+            {
+                await _memoryManagementService.InvalidateCache("AllActorPortfolios");
+            }
 
             response.Success = true;
             response.Data = true;
@@ -746,6 +770,8 @@ public class ActorService : IActorService
                 await _context.SaveChangesAsync();
 
                 await transaction.CommitAsync();
+
+                await _memoryManagementService.InvalidateCache("AllActorPortfolios");
 
                 response.Success = true;
                 response.Data = groupId;

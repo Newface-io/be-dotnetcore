@@ -19,7 +19,7 @@ namespace NewFace.Controllers
             _homeService = homeService;
         }
 
-        [SwaggerOperation(Summary = "메인 페이지")]
+        [SwaggerOperation(Summary = "메인 페이지 (전체)")]
         [HttpGet("main-page")]
         public async Task<IActionResult> Index()
         {
@@ -31,11 +31,23 @@ namespace NewFace.Controllers
             return Ok(response);
         }
 
-        [SwaggerOperation(Summary = "메인 페이지 - 데모스타 목록")]
+        [SwaggerOperation(Summary = "메인 페이지 - 데모스타 목록 (페이지네이션)")]
         [HttpGet("demo-stars")]
-        public async Task<IActionResult> GetDemoStars([FromQuery] string category = "", [FromQuery] string sortBy = "", [FromQuery] int page = 1)
+        public async Task<IActionResult> GetDemoStars([FromQuery] string filter = "", [FromQuery] string sortBy = "", [FromQuery] int page = 1)
         {
-            var response = await _homeService.GetDemoStars(category, sortBy, page);
+            var response = await _homeService.GetDemoStars(filter, sortBy, page);
+            if (response.Success)
+            {
+                return Ok(response);
+            }
+            return BadRequest(response);
+        }
+
+        [SwaggerOperation(Summary = "메인 페이지 - 배우 포트폴리오 탭")]
+        [HttpGet("portfolios")]
+        public async Task<IActionResult> GetAllActorPortfolios([FromQuery] string filter = "", [FromQuery] string sortBy = "", [FromQuery] int page = 1)
+        {
+            var response = await _homeService.GetAllActorPortfolios(filter, sortBy, page);
             if (response.Success)
             {
                 return Ok(response);

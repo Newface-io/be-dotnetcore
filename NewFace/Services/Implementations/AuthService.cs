@@ -170,15 +170,17 @@ public class AuthService : IAuthService
             // 3. get role
             var userRole = user.UserRoles.FirstOrDefault()?.Role ?? string.Empty;
 
-            // 6.Prepare response data
+            // 4.Prepare response data
             response.Data = new SignInResponseDto()
             {
                 id = user.Id,
-                Email = user.Email,
+                email = user.Email,
+                name = user.Name,
+                imageUrl = user.ImageUrl,
                 role = userRole
             };
 
-            // 4. Set specific ID based on role
+            // 5. Set specific ID based on role
             switch (userRole)
             {
                 case NewFace.Common.Constants.UserRole.Actor:
