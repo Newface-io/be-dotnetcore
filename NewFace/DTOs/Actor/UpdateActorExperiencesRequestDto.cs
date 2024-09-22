@@ -4,7 +4,7 @@ namespace NewFace.DTOs.Actor;
 
 public class UpdateActorExperiencesRequestDto
 {
-    public List<UpdateActorExperiences> UpdateActorExperiences { get; set; } = new List<UpdateActorExperiences>();
+    public List<UpdateActorExperiences> actorExperiences { get; set; } = new List<UpdateActorExperiences>();
 }
 
 public class UpdateActorExperiences

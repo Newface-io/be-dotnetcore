@@ -137,6 +137,9 @@ public class UserService : IUserService
                         await _context.SaveChangesAsync();
 
                         roleSpecificId = newActor.Id;
+                    } else
+                    {
+                        roleSpecificId = existingActor.Id;
                     }
 
                     break;
@@ -154,6 +157,9 @@ public class UserService : IUserService
                         await _context.SaveChangesAsync();
 
                         roleSpecificId = newEnter.Id;
+                    } else
+                    {
+                        roleSpecificId = existingEnter.Id;
                     }
                     break;
                 default: break;

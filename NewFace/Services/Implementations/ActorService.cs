@@ -898,7 +898,7 @@ public class ActorService : IActorService
                     .ToListAsync();
 
                 // 2. Process each experience in the request
-                foreach (var experienceDto in model.UpdateActorExperiences)
+                foreach (var experienceDto in model.actorExperiences)
                 {
                     if (experienceDto.ExperienceId == 0)
                     {
@@ -932,7 +932,7 @@ public class ActorService : IActorService
                 }
 
                 // 3. Remove experiences not in the request
-                var experienceIdsToKeep = model.UpdateActorExperiences
+                var experienceIdsToKeep = model.actorExperiences
                     .Where(e => e.ExperienceId != 0)
                     .Select(e => e.ExperienceId)
                     .ToList();
