@@ -18,7 +18,9 @@ public class Actor
     [StringLength(255)]
     public string Address { get; set; } = string.Empty; // 주소
 
+    [Precision(5, 2)]
     public decimal? Height { get; set; } // 키
+    [Precision(5, 2)]
     public decimal? Weight { get; set; } // 몸무게
 
     public string Bio { get; set; } = string.Empty; // 자기소개
