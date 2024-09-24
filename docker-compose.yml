@@ -20,7 +20,7 @@ services:
     volumes:
       - ./uploads:/app/uploads
 
-  # 데이터베이스 서비스는 RDS로 대체되므로 주석 처리
+  # NOT RDS
   # newface.database:
   #   image: mariadb:latest
   #   # MSSQL
