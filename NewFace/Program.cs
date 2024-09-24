@@ -152,12 +152,12 @@ app.UseCors("CorsPolicy");
 
 // upload image
 app.UseStaticFiles(); // default wwwroot folder
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new PhysicalFileProvider(
-        Path.Combine(Directory.GetCurrentDirectory(), "uploads")),
-    RequestPath = "/uploads"
-});
+//app.UseStaticFiles(new StaticFileOptions
+//{
+//    FileProvider = new PhysicalFileProvider(
+//        Path.Combine(Directory.GetCurrentDirectory(), "uploads")),
+//    RequestPath = "/uploads"
+//});
 
 app.UseAuthentication();
 app.UseAuthorization();

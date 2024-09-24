@@ -9,36 +9,40 @@ services:
       dockerfile: NewFace/Dockerfile
     ports:
       - "8080:8080"
-    depends_on:
-      - newface.database
+
+    # NOT RDS
+    # depends_on:
+    #   - newface.database
     environment:
-      - ConnectionStrings__DefaultConnection=Server=newface.database;Port=3306;Database=NewFace;User=root;Password=${MYSQL_ROOT_PASSWORD:-YourStrong@Passw0rd1};
+      - ConnectionStrings__DefaultConnection=Server=newface-qa.cn4g20466w8t.ap-northeast-2.rds.amazonaws.com;Port=3306;Database=NewFace;User=newface;Password=newfaceqa1;
       # MSSQL
       # - ConnectionStrings__DefaultConnection=Server=newface.database;Database=NewFace;User Id=sa;Password=${SA_PASSWORD:-YourStrong@Passw0rd1};TrustServerCertificate=True;Encrypt=False;
     volumes:
       - ./uploads:/app/uploads
-  newface.database:
-    image: mariadb:latest
-    # MSSQL
-    # image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: newface.database
-    environment:
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-YourStrong@Passw0rd1}
-      - MYSQL_DATABASE=NewFace
-      - MYSQL_USER=newuser
-      - MYSQL_PASSWORD=userpassword
-      # MSSQL
-      # - ACCEPT_EULA=Y
-      # - SA_PASSWORD=${SA_PASSWORD:-YourStrong@Passw0rd1}
-    ports:
-      # MSSQL
-      # - "1433:1433"
-      - "3306:3306"
-    volumes:
-      # MSSQL
-      # - mssql-data:/var/opt/mssql
-      - mariadb-data:/var/lib/mysql
-      - ./init-scripts:/docker-entrypoint-initdb.d
+
+  # 데이터베이스 서비스는 RDS로 대체되므로 주석 처리
+  # newface.database:
+  #   image: mariadb:latest
+  #   # MSSQL
+  #   # image: mcr.microsoft.com/mssql/server:2022-latest
+  #   container_name: newface.database
+  #   environment:
+  #     - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-YourStrong@Passw0rd1}
+  #     - MYSQL_DATABASE=NewFace
+  #     - MYSQL_USER=newuser
+  #     - MYSQL_PASSWORD=userpassword
+  #     # MSSQL
+  #     # - ACCEPT_EULA=Y
+  #     # - SA_PASSWORD=${SA_PASSWORD:-YourStrong@Passw0rd1}
+  #   ports:
+  #     # MSSQL
+  #     # - "1433:1433"
+  #     - "3306:3306"
+  #   volumes:
+  #     # MSSQL
+  #     # - mssql-data:/var/opt/mssql
+  #     - mariadb-data:/var/lib/mysql
+  #     - ./init-scripts:/docker-entrypoint-initdb.d
 
   newface.cache:
     image: redis:latest
@@ -47,7 +51,8 @@ services:
     ports:
       - '6379:6379'
 
-volumes:
-  mariadb-data:
-  # MSSQL
-  # mssql-data:
+# NOT RDS
+# volumes:
+#   mariadb-data:
+#   # MSSQL
+#   # mssql-data:
