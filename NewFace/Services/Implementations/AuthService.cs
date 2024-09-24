@@ -1,5 +1,4 @@
-﻿using Azure.Core;
-using Microsoft.Extensions.Caching.Distributed;
+﻿using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.IdentityModel.Tokens;
 using NewFace.Common.Constants;
 using NewFace.Data;

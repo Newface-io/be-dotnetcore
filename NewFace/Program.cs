@@ -88,7 +88,12 @@ builder.Services.AddScoped<ILogService, LogService>();
 // DBContext
 builder.Services.AddDbContext<DataContext>(options =>
 {
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+    // 1. MSSQL
+    // options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+
+    // 2. MYSQL(MariaDB)
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
 });
 
 // Redis
