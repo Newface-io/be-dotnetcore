@@ -579,15 +579,15 @@ public class ActorService : IActorService
             var uploadedImages = new List<ActorImage>();
             var nextActorOrder = await GetNextActorOrderAsync(actorId);
             var newGroupId = await GetNextGroupIdAsync(actorId);
+            var folderPath = $"Actor/Portfolio/Image/{actorId}";
 
             foreach (var file in model.Images)
             {
                 if (file.Length > 0)
                 {
-                    string relativePath = Path.Combine("actors", "image", actorId.ToString());
-                    string storagePath = await _fileService.UploadImageAndGetUrl(file, relativePath);
+                    var uploadResult = await _fileService.UploadFile(file, folderPath);
 
-                    if (storagePath.Equals(string.Empty))
+                    if (!uploadResult.Success)
                     {
                         await transaction.RollbackAsync();
                         _logService.LogError("ERROR: UploadActorImages", "storage upload error", $"Error uploading images for actorId: {actorId}");
@@ -595,7 +595,11 @@ public class ActorService : IActorService
                         response.Code = MessageCode.Custom.FAILED_FILE_UPLOAD.ToString();
                         response.Message = MessageCode.CustomMessages[MessageCode.Custom.FAILED_FILE_UPLOAD];
                         response.Data = false;
+
+                        return response;
                     }
+
+                    var (storagePath, publicUrl) = (uploadResult.Data.S3Path, uploadResult.Data.CloudFrontUrl);
 
                     var actorImage = new ActorImage
                     {
@@ -603,9 +607,9 @@ public class ActorService : IActorService
                         GroupId = newGroupId,
                         GroupOrder = groupOrder,
                         ActorOrder = nextActorOrder,
-                        StoragePath = storagePath,
-                        PublicUrl = string.Empty, // S3 올라가면 처리
-                        FileName = Path.GetFileName(storagePath),
+                        StoragePath = storagePath, // Storage url
+                        PublicUrl = publicUrl, // CDN
+                        FileName = Path.GetFileName(file.FileName),
                         FileType = Path.GetExtension(file.FileName).TrimStart('.'),
                         FileSize = file.Length,
                         IsMainImage = !existingImages && groupOrder == 1 ? true : false,

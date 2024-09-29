@@ -12,9 +12,9 @@ public class UserService : IUserService
     private readonly DataContext _context;
     private readonly ILogService _logService;
     private readonly IAuthService _authService;
-    private readonly IFileService _fileService;
+    private readonly IDockerFileService _fileService;
 
-    public UserService(DataContext context, ILogService logService, IAuthService authService, IFileService fileService)
+    public UserService(DataContext context, ILogService logService, IAuthService authService, IDockerFileService fileService)
     {
         _context = context;
         _logService = logService;
