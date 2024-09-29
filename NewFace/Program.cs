@@ -69,7 +69,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("CorsPolicy", policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "https://your-production-domain.com")
+        policy.WithOrigins("http://localhost:3000", "http://13.209.80.26:3000")
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
