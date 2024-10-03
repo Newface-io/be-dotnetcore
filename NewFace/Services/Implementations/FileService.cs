@@ -1,11 +1,11 @@
-﻿using Amazon.CloudFront.Model;
-using Amazon.CloudFront;
+﻿using Amazon.CloudFront;
 using Amazon.S3.Transfer;
 using Amazon.S3;
 using NewFace.Responses;
 using Amazon.S3.Model;
 using Amazon;
 using Amazon.Runtime;
+using Amazon.Runtime.CredentialManagement;
 
 namespace NewFace.Services;
 
@@ -18,14 +18,30 @@ public class FileService : IFileService
     private readonly string _cloudFrontDomain;
     //private readonly string _cloudFrontDistributionId; // 나중에 cache 제거를 위해 필요
 
-    public FileService(ILogService logService, IConfiguration configuration)
+    public FileService(ILogService logService)
     {
-        _s3Client = new AmazonS3Client(RegionEndpoint.APNortheast2);
-        _cloudFrontClient = new AmazonCloudFrontClient(RegionEndpoint.APNortheast2);
         _logService = logService;
-        _bucketName = configuration["AWS:S3BucketName"] ?? string.Empty;
-        _cloudFrontDomain = configuration["AWS:CloudFrontDomain"] ?? string.Empty;
-        //_cloudFrontDistributionId = configuration["AWS:CloudFrontDistributionId"] ?? string.Empty;
+
+        var chain = new CredentialProfileStoreChain(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "\\.aws\\credentials");
+
+        AWSCredentials awsCredentials;
+        if (chain.TryGetAWSCredentials("default", out awsCredentials))
+        {
+            _s3Client = new AmazonS3Client(awsCredentials, RegionEndpoint.APNortheast2);
+            _cloudFrontClient = new AmazonCloudFrontClient(awsCredentials, RegionEndpoint.APNortheast2);
+        }
+        else
+        {
+            throw new Exception("AWS credentials not found");
+        }
+
+        _bucketName = Environment.GetEnvironmentVariable("AWS_S3_BUCKET_NAME") ?? string.Empty;
+        _cloudFrontDomain = Environment.GetEnvironmentVariable("AWS_CLOUDFRONT_DOMAIN") ?? string.Empty;
+
+        if (string.IsNullOrEmpty(_bucketName) || string.IsNullOrEmpty(_cloudFrontDomain))
+        {
+            throw new Exception("AWS S3 Bucket Name or CloudFront Domain not set in environment variables");
+        }
     }
 
     public bool IsAllowedImageFileType(string fileExtension)
