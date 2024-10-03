@@ -92,6 +92,42 @@ public class FileService : IFileService
         return response;
     }
 
+    public async Task<ServiceResponse<bool>> DeleteFile(string s3Path)
+    {
+        var response = new ServiceResponse<bool>();
+        try
+        {
+            var uri = new Uri(s3Path);
+            string bucketName = uri.Host;
+            string s3Key = uri.AbsolutePath.TrimStart('/');
+
+            var deleteObjectRequest = new DeleteObjectRequest
+            {
+                BucketName = bucketName,
+                Key = s3Key
+            };
+
+            await _s3Client.DeleteObjectAsync(deleteObjectRequest);
+
+            response.Data = true;
+            response.Success = true;
+        }
+        catch (AmazonS3Exception ex)
+        {
+            response.Success = false;
+            response.Message = "Failed to delete file.";
+            _logService.LogError("DeleteFile", ex.Message, ex.StackTrace ?? string.Empty);
+        }
+        catch (Exception ex)
+        {
+            response.Success = false;
+            response.Message = "Failed to delete file.";
+            _logService.LogError("DeleteFile", ex.Message, ex.StackTrace ?? string.Empty);
+        }
+
+        return response;
+    }
+
     public async Task<ServiceResponse<bool>> MoveFileToDeletedFolder(string fileName)
     {
         var response = new ServiceResponse<bool>();

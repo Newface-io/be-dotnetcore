@@ -29,7 +29,9 @@ public class User
 
     [StringLength(5)]
     public string Gender { get; set; } = string.Empty; // 성별
-    public string ImageUrl { get; set; } = string.Empty; // 유저 이미지
+    [StringLength(255)]
+    public string StoragePath { get; set; } = string.Empty; // 실제 저장 경로 (예: "actors/12345.jpg")
+    public string PublicUrl { get; set; } = string.Empty;   // 공개 접근 가능한 URL
 
     public DateTime CreatedDate { get; set; } = DateTime.Now;
     public DateTime LastUpdated { get; set; } = DateTime.Now;

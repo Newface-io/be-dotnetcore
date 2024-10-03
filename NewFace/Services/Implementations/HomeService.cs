@@ -38,9 +38,12 @@ public class HomeService : IHomeService
                 {
                     ActorId = a.Id,
                     Name = a.User.Name,
-                    ImageUrl = a.User.ImageUrl,
+                    ImageUrl = a.User.PublicUrl,
                     Bio = a.Bio,
-                    MainActorImageUrl = a.Images.FirstOrDefault(i => i.IsMainImage).StoragePath
+                    MainActorImageUrl = a.Images
+                                        .Where(i => i.IsMainImage)
+                                        .Select(i => i.PublicUrl)
+                                        .FirstOrDefault() ?? string.Empty
                 })
                 .ToListAsync();
 

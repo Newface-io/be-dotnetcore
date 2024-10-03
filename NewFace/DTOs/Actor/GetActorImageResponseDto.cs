@@ -9,7 +9,7 @@ public class GetActorImagesResponseDto
 public class GetActorImages
 {
     public int ImageId { get; set; } // ActorImage table PK
-    public string PublicUrl { get; set; } = string.Empty;
+    public string ImageUrl { get; set; } = string.Empty;
     public string FileName { get; set; } = string.Empty;
     public int GroupId { get; set; }
     public int GroupOrder { get; set; }

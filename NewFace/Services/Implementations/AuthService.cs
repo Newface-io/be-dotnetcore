@@ -175,7 +175,7 @@ public class AuthService : IAuthService
                 id = user.Id,
                 email = user.Email,
                 name = user.Name,
-                imageUrl = user.ImageUrl,
+                imageUrl = user.PublicUrl,
                 role = userRole
             };
 

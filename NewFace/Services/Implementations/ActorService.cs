@@ -454,7 +454,7 @@ public class ActorService : IActorService
             var images = actorImages.Select(g => new GetActorImages
             {
                 ImageId = g.FirstImage.Id,
-                PublicUrl = g.FirstImage.PublicUrl,
+                ImageUrl = g.FirstImage.PublicUrl,
                 FileName = g.FirstImage.FileName,
                 GroupId = g.GroupId,
                 GroupOrder = g.FirstImage.GroupOrder,
@@ -689,7 +689,9 @@ public class ActorService : IActorService
 
                 foreach (var image in imagesToDelete)
                 {
-                    if(image.IsMainImage == true)
+                    await _fileService.DeleteFile(image.StoragePath);
+
+                    if (image.IsMainImage == true)
                     {
                         isRemoveCache = true;
                     }

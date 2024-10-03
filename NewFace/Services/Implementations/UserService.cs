@@ -12,9 +12,9 @@ public class UserService : IUserService
     private readonly DataContext _context;
     private readonly ILogService _logService;
     private readonly IAuthService _authService;
-    private readonly IDockerFileService _fileService;
+    private readonly IFileService _fileService;
 
-    public UserService(DataContext context, ILogService logService, IAuthService authService, IDockerFileService fileService)
+    public UserService(DataContext context, ILogService logService, IAuthService authService, IFileService fileService)
     {
         _context = context;
         _logService = logService;
@@ -237,7 +237,7 @@ public class UserService : IUserService
                         Name = actorUser.Name,
                         Email = actorUser.Email,
                         Phone = actorUser.Phone,
-                        ImageUrl = actorUser.ImageUrl
+                        ImageUrl = actorUser.PublicUrl
                     };
 
                     break;
@@ -271,7 +271,7 @@ public class UserService : IUserService
                         Name = enterUser.Name,
                         Email = enterUser.Email,
                         Phone = enterUser.Phone,
-                        ImageUrl = enterUser.ImageUrl
+                        ImageUrl = enterUser.PublicUrl
                     };
                     break;
 
@@ -293,7 +293,7 @@ public class UserService : IUserService
                         Name = commonUser.Name,
                         Email = commonUser.Email,
                         Phone = commonUser.Phone,
-                        ImageUrl = commonUser.ImageUrl
+                        ImageUrl = commonUser.PublicUrl
                     };
 
                     break;
@@ -383,27 +383,51 @@ public class UserService : IUserService
             string userImageRelativePath = Path.Combine("users", "image", userId.ToString());
 
             // Handle image upload
-            if (model.Image != null)
+            if (model.isUpdatedImage)
             {
-                string storagePath = await _fileService.UploadImageAndGetUrl(model.Image, userImageRelativePath);
+                var folderPath = $"User/Image/{userId}";
 
-                if (!string.IsNullOrEmpty(storagePath))
+                if (model.Image != null)
                 {
-                    user.ImageUrl = storagePath;
-                }
-                else
+                    var uploadResult = await _fileService.UploadFile(model.Image, folderPath);
+
+                    if (!uploadResult.Success)
+                    {
+                        await transaction.RollbackAsync();
+                        _logService.LogError("ERROR: UpdateUserInfoForEdit", "storage upload error", $"Error uploading images for userId: {userId}");
+                        response.Success = false;
+                        response.Code = MessageCode.Custom.FAILED_FILE_UPLOAD.ToString();
+                        response.Message = MessageCode.CustomMessages[MessageCode.Custom.FAILED_FILE_UPLOAD];
+                        response.Data = false;
+
+                        return response;
+                    }
+
+                    await _fileService.DeleteFile(user.StoragePath);
+
+                    var (storagePath, publicUrl) = (uploadResult.Data.S3Path, uploadResult.Data.CloudFrontUrl);
+
+                    user.StoragePath = storagePath; 
+                    user.PublicUrl = publicUrl;
+                } else
                 {
-                    response.Success = false;
-                    response.Code = MessageCode.Custom.FAILED_FILE_UPLOAD.ToString();
-                    response.Message = MessageCode.CustomMessages[MessageCode.Custom.FAILED_FILE_UPLOAD];
-                    return response;
+                    var deleteResult = await _fileService.DeleteFile(user.StoragePath);
+
+                    if (!deleteResult.Success)
+                    {
+                        await transaction.RollbackAsync();
+                        _logService.LogError("ERROR: UpdateUserInfoForEdit", "storage delete error", $"Error delete images for userId: {userId}");
+                        response.Success = false;
+                        response.Code = MessageCode.Custom.FAILED_FILE_UPLOAD.ToString();
+                        response.Message = MessageCode.CustomMessages[MessageCode.Custom.FAILED_FILE_UPLOAD];
+                        response.Data = false;
+
+                        return response;
+                    }
+
+                    user.StoragePath = string.Empty;
+                    user.PublicUrl = string.Empty;
                 }
-            }
-            else if (!string.IsNullOrEmpty(user.ImageUrl))
-            {
-                // If no new image is provided and there's an existing image, delete it
-                await _fileService.DeleteFileAndEmptyFolder(user.ImageUrl);
-                user.ImageUrl = string.Empty;
             }
 
             await _context.SaveChangesAsync();
