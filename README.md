@@ -1,3 +1,6 @@
+0. env 파일
+    - 솔루션 레벨에 추가
+
 1. AWS EC2 빌드
  
   1.1) 삭제
@@ -14,3 +17,5 @@
   
   1.5) docker build
   docker-compose up --build
+
+
