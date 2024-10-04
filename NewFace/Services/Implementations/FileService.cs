@@ -22,7 +22,11 @@ public class FileService : IFileService
     {
         _logService = logService;
 
-        var chain = new CredentialProfileStoreChain(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "\\.aws\\credentials");
+        var credentialsFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".aws", "credentials");
+
+        var chain = new CredentialProfileStoreChain(credentialsFilePath);
+
+        //var chain = new CredentialProfileStoreChain(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "\\.aws\\credentials");
 
         AWSCredentials awsCredentials;
         if (chain.TryGetAWSCredentials("default", out awsCredentials))
