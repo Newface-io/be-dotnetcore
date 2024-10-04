@@ -21,6 +21,8 @@ services:
       # - ConnectionStrings__DefaultConnection=Server=newface.database;Database=NewFace;User Id=sa;Password=${SA_PASSWORD:-YourStrong@Passw0rd1};TrustServerCertificate=True;Encrypt=False;
     volumes:
       - ./uploads:/app/uploads
+      - ~/.aws:/root/.aws:ro
+    user: "${UID}:${GID}"
 
   # NOT RDS
   # newface.database:
