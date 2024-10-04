@@ -14,6 +14,8 @@ services:
     # depends_on:
     #   - newface.database
     environment:
+      - AWS_S3_BUCKET_NAME=${AWS_S3_BUCKET_NAME}
+      - AWS_CLOUDFRONT_DOMAIN=${AWS_CLOUDFRONT_DOMAIN}
       - ConnectionStrings__DefaultConnection=Server=newface-qa.cn4g20466w8t.ap-northeast-2.rds.amazonaws.com;Port=3306;Database=NewFace;User=newface;Password=newfaceqa1;
       # MSSQL
       # - ConnectionStrings__DefaultConnection=Server=newface.database;Database=NewFace;User Id=sa;Password=${SA_PASSWORD:-YourStrong@Passw0rd1};TrustServerCertificate=True;Encrypt=False;
