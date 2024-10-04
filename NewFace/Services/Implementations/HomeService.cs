@@ -109,6 +109,7 @@ public class HomeService : IHomeService
                 .Take(limit)
                 .Select(ds => new DemoStarItemDto
                 {
+                    Id = ds.Id,
                     Title = ds.Title,
                     Category = ds.Category,
                     Url = ds.Url
