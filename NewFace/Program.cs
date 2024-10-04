@@ -7,6 +7,12 @@ using NewFace.Services.Interfaces;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Reflection;
 using System.Text;
+using DotNetEnv;
+
+var solutionDirectory = Directory.GetParent(Directory.GetCurrentDirectory())?.FullName;
+var envPath = Path.Combine(solutionDirectory, ".env");
+
+Env.Load(envPath);
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -92,7 +98,17 @@ builder.Services.AddDbContext<DataContext>(options =>
     // options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 
     // 2. MYSQL(MariaDB)
-    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    //var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    //options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+
+    var connectionString = string.Format(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        Environment.GetEnvironmentVariable("AWS_SERVER"),
+        Environment.GetEnvironmentVariable("AWS_DATABASE"),
+        Environment.GetEnvironmentVariable("AWS_USER"),
+        Environment.GetEnvironmentVariable("AWS_PASSWORD")
+    );
+
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
 });
 
@@ -101,13 +117,13 @@ builder.Services.AddStackExchangeRedisCache(option =>
     option.Configuration = builder.Configuration.GetConnectionString("Cache"));
 
 // JWT setting
-string? secretKey = builder.Configuration["Jwt:SecretKey"];
-if (string.IsNullOrEmpty(secretKey))
+var jwtSecretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
+if (string.IsNullOrEmpty(jwtSecretKey))
 {
     throw new InvalidOperationException("JWT Secret Key is not configured.");
 }
 
-var key = Encoding.ASCII.GetBytes(secretKey);
+var key = Encoding.ASCII.GetBytes(jwtSecretKey);
 
 builder.Services.AddAuthentication(options =>
 {

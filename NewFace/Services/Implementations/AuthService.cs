@@ -18,18 +18,26 @@ namespace NewFace.Services;
 public class AuthService : IAuthService
 {
     private readonly DataContext _context;
-    private readonly IConfiguration _configuration;
     private readonly ILogService _logService;
     private readonly IDistributedCache _cache;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly string _jwtSecretKey;
+    private readonly string _redisAccountSid;
+    private readonly string _jwtAuthToken;
+    private readonly string _jwtSendNumber;
 
-    public AuthService(DataContext context, IConfiguration configuration, ILogService logService, IDistributedCache cache, IHttpContextAccessor httpContextAccessor)
+    public AuthService(DataContext context, ILogService logService, IDistributedCache cache, IHttpContextAccessor httpContextAccessor)
     {
         _context = context;
         _logService = logService;
-        _configuration = configuration;
         _cache = cache;
         _httpContextAccessor = httpContextAccessor;
+
+        _jwtSecretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") ?? string.Empty;
+        _redisAccountSid = Environment.GetEnvironmentVariable("REDIS_ACCOUNT_SID") ?? string.Empty;
+        _jwtAuthToken = Environment.GetEnvironmentVariable("REDIS_AUTH_TOKEN") ?? string.Empty;
+        _jwtSendNumber = Environment.GetEnvironmentVariable("REDIS_SEND_NUMBER") ?? string.Empty;
+
     }
 
     public int? GetUserIdFromToken()
@@ -268,7 +276,7 @@ public class AuthService : IAuthService
     public string GenerateJwtToken(User user, string role, int roleSpecificId = 0)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.ASCII.GetBytes(_configuration["Jwt:SecretKey"]);
+        var key = Encoding.ASCII.GetBytes(_jwtSecretKey);
 
         var claims = new List<Claim>
         {
@@ -311,9 +319,9 @@ public class AuthService : IAuthService
 
         try
         {
-            string accountSid = _configuration["Redis:AccountSid"];
-            string authToken = _configuration["Redis:AuthToken"];
-            string sendNumber = _configuration["Redis:SendNumber"];
+            string accountSid = _redisAccountSid;
+            string authToken = _jwtAuthToken;
+            string sendNumber = _jwtSendNumber;
 
             TwilioClient.Init(accountSid, authToken);
 

@@ -12,6 +12,7 @@
   <ItemGroup>
     <PackageReference Include="AWSSDK.CloudFront" Version="3.7.400.26" />
     <PackageReference Include="AWSSDK.S3" Version="3.7.403.5" />
+    <PackageReference Include="DotNetEnv" Version="3.1.1" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.7" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.7">
