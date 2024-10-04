@@ -22,22 +22,29 @@ public class FileService : IFileService
     {
         _logService = logService;
 
-        var credentialsFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".aws", "credentials");
-
-        var chain = new CredentialProfileStoreChain(credentialsFilePath);
-
-        //var chain = new CredentialProfileStoreChain(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "\\.aws\\credentials");
-
-        AWSCredentials awsCredentials;
-        if (chain.TryGetAWSCredentials("default", out awsCredentials))
-        {
-            _s3Client = new AmazonS3Client(awsCredentials, RegionEndpoint.APNortheast2);
-            _cloudFrontClient = new AmazonCloudFrontClient(awsCredentials, RegionEndpoint.APNortheast2);
-        }
-        else
+        var credentials = FallbackCredentialsFactory.GetCredentials();
+        if (credentials == null)
         {
             throw new Exception("AWS credentials not found");
         }
+        else
+        {
+            _s3Client = new AmazonS3Client(credentials, RegionEndpoint.APNortheast2);
+            _cloudFrontClient = new AmazonCloudFrontClient(credentials, RegionEndpoint.APNortheast2);
+        }
+
+        //var chain = new CredentialProfileStoreChain(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "\\.aws\\credentials");
+        
+        //AWSCredentials awsCredentials;
+        //if (chain.TryGetAWSCredentials("default", out awsCredentials))
+        //{
+        //    _s3Client = new AmazonS3Client(awsCredentials, RegionEndpoint.APNortheast2);
+        //    _cloudFrontClient = new AmazonCloudFrontClient(awsCredentials, RegionEndpoint.APNortheast2);
+        //}
+        //else
+        //{
+        //    throw new Exception("AWS credentials not found");
+        //}
 
         _bucketName = Environment.GetEnvironmentVariable("AWS_S3_BUCKET_NAME") ?? string.Empty;
         _cloudFrontDomain = Environment.GetEnvironmentVariable("AWS_CLOUDFRONT_DOMAIN") ?? string.Empty;
