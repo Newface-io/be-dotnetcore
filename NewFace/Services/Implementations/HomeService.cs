@@ -138,6 +138,7 @@ public class HomeService : IHomeService
         return response;
     }
 
+    // TO DO: 이거 SP로 하는게 더 좋을 수도 있어. db 여러번 왔다갔다하는것보다 SP 한번 처리한느게 더 나을거같은데. 가능하면?
     private async Task<List<RecommendedDemoStarDto>> GetRecommendedDemoStars(int currentDemoStarId)
     {
         // 현재 DemoStar의 정보를 가져옵니다.
