@@ -73,6 +73,53 @@ public class HomeService : IHomeService
         return response;
     }
 
+    public async Task<ServiceResponse<GetDemoStarResponseDto>> GetDemoStar(int demoStarId)
+    {
+        var response = new ServiceResponse<GetDemoStarResponseDto>();
+
+        try
+        {
+            var demoStarData = await _context.ActorDemoStars
+                .Where(ds => ds.Id == demoStarId)
+                .Select(ds => new GetDemoStarResponseDto
+                {
+                    actorId = ds.ActorId,
+                    actorName = ds.Actor.User.Name,
+                    demoStarData = new DemoStarData
+                    {
+                        demoStarId = ds.Id,
+                        Title = ds.Title,
+                        Category = ds.Category,
+                        Url = ds.Url,
+                        CreatedDate = ds.CreatedDate,
+                        LastUpdated = ds.LastUpdated
+                    }
+                })
+                .FirstOrDefaultAsync();
+
+            if (demoStarData == null)
+            {
+                response.Success = false;
+                response.Code = MessageCode.Custom.INVALID_DATA.ToString();
+                response.Message = MessageCode.CustomMessages[MessageCode.Custom.INVALID_DATA];
+                return response;
+            }
+
+            response.Data = demoStarData;
+            response.Success = true;
+        }
+        catch (Exception ex)
+        {
+            response.Success = false;
+            response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
+            response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
+
+            _logService.LogError("GetDemoStar", ex.Message, ex.StackTrace ?? string.Empty);
+        }
+
+        return response;
+    }
+
     public async Task<ServiceResponse<DemoStarDataResponseDto>> GetDemoStars(string filter = "", string sortBy = "", int page = 1, int limit = 20)
     {
         var response = new ServiceResponse<DemoStarDataResponseDto>();

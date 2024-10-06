@@ -55,5 +55,16 @@ namespace NewFace.Controllers
             return BadRequest(response);
         }
 
+        [SwaggerOperation(Summary = "메인 페이지 - 데모스타 Detail")]
+        [HttpGet("demo-star")]
+        public async Task<IActionResult> GetDemoStar([FromQuery] int demoStarId)
+        {
+            var response = await _homeService.GetDemoStar(demoStarId);
+            if (response.Success)
+            {
+                return Ok(response);
+            }
+            return BadRequest(response);
+        }
     }
 }
