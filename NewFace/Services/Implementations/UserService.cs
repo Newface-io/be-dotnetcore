@@ -463,7 +463,7 @@ public class UserService : IUserService
     }
 
 
-    public async Task<ServiceResponse<bool>> ToggleLike(int userId, int demoStarId)
+    public async Task<ServiceResponse<bool>> ToggleLike(int userId, int demoStarId, string likeType)
     {
         var response = new ServiceResponse<bool>();
 
@@ -485,7 +485,7 @@ public class UserService : IUserService
             }
 
             var existingLike = await _context.UserLikes
-                .FirstOrDefaultAsync(ul => ul.UserId == userId && ul.ItemId == demoStarId && ul.ItemType == LikeType.DemoStar);
+                .FirstOrDefaultAsync(ul => ul.UserId == userId && ul.ItemId == demoStarId && ul.ItemType == likeType);
 
             if (existingLike != null)
             {
