@@ -6,7 +6,9 @@ public class GetDemoStarResponseDto
 {
     public int actorId {  get; set; }
     public string actorName { get; set; } = string.Empty;
+    public string actorImageUrl { get; set; } = string.Empty;
     public DemoStarData demoStarData { get; set; } = new DemoStarData();
+    public List<RecommendedDemoStarDto> RecommendedDemoStars { get; set; } = new List<RecommendedDemoStarDto>();
 }
 
 
@@ -18,6 +20,16 @@ public class DemoStarData
     [StringLength(10)]
     public string Category { get; set; } = string.Empty; // 작품 카테고리
     public string Url { get; set; } = string.Empty; // Url
+    public long ViewCount { get; set; } = 0; // 조회수
     public DateTime CreatedDate { get; set; } = DateTime.Now;
     public DateTime LastUpdated { get; set; } = DateTime.Now;
+}
+
+public class RecommendedDemoStarDto
+{
+    public int actorId { get; set; }
+    public string actorImageUrl { get; set; } = string.Empty;
+    public int demoStarId { get; set; }
+    public string title { get; set; } = string.Empty;
+    public string url { get; set; } = string.Empty;
 }

@@ -77,39 +77,57 @@ public class HomeService : IHomeService
     {
         var response = new ServiceResponse<GetDemoStarResponseDto>();
 
+        using var transaction = await _context.Database.BeginTransactionAsync();
+
         try
         {
-            var demoStarData = await _context.ActorDemoStars
-                .Where(ds => ds.Id == demoStarId)
-                .Select(ds => new GetDemoStarResponseDto
-                {
-                    actorId = ds.ActorId,
-                    actorName = ds.Actor.User.Name,
-                    demoStarData = new DemoStarData
-                    {
-                        demoStarId = ds.Id,
-                        Title = ds.Title,
-                        Category = ds.Category,
-                        Url = ds.Url,
-                        CreatedDate = ds.CreatedDate,
-                        LastUpdated = ds.LastUpdated
-                    }
-                })
-                .FirstOrDefaultAsync();
+            var demoStar = await _context.ActorDemoStars
+                .FirstOrDefaultAsync(ds => ds.Id == demoStarId);
 
-            if (demoStarData == null)
+            if (demoStar == null)
             {
+                await transaction.RollbackAsync();
+
                 response.Success = false;
                 response.Code = MessageCode.Custom.INVALID_DATA.ToString();
                 response.Message = MessageCode.CustomMessages[MessageCode.Custom.INVALID_DATA];
                 return response;
             }
 
+            demoStar.ViewCount++;
+            await _context.SaveChangesAsync();
+
+            var demoStarData = await _context.ActorDemoStars
+                .Where(ds => ds.Id == demoStarId)
+                .Select(ds => new GetDemoStarResponseDto
+                {
+                    actorId = ds.ActorId,
+                    actorName = ds.Actor.User.Name,
+                    actorImageUrl = ds.Actor.User.PublicUrl,
+                    demoStarData = new DemoStarData
+                    {
+                        demoStarId = ds.Id,
+                        Title = ds.Title,
+                        Category = ds.Category,
+                        Url = ds.Url,
+                        ViewCount = ds.ViewCount,
+                        CreatedDate = ds.CreatedDate,
+                        LastUpdated = ds.LastUpdated
+                    }
+                })
+                .FirstOrDefaultAsync() ?? new GetDemoStarResponseDto();
+
+            demoStarData.RecommendedDemoStars = await GetRecommendedDemoStars(demoStarId);
+
+            await transaction.CommitAsync();
+
             response.Data = demoStarData;
             response.Success = true;
         }
         catch (Exception ex)
         {
+            await transaction.RollbackAsync();
+
             response.Success = false;
             response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
             response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
@@ -118,6 +136,62 @@ public class HomeService : IHomeService
         }
 
         return response;
+    }
+
+    private async Task<List<RecommendedDemoStarDto>> GetRecommendedDemoStars(int currentDemoStarId)
+    {
+        // 현재 DemoStar의 정보를 가져옵니다.
+        var currentDemoStar = await _context.ActorDemoStars
+            .Where(ds => ds.Id == currentDemoStarId)
+            .Select(ds => new { ds.Title, ds.Category })
+            .FirstOrDefaultAsync();
+
+        if (currentDemoStar == null)
+        {
+            return new List<RecommendedDemoStarDto>();
+        }
+
+        // 추천 DemoStars를 가져옵니다.
+        var recommendedDemoStars = await _context.ActorDemoStars
+            .Where(ds => ds.Id != currentDemoStarId)
+            .Select(ds => new
+            {
+                ds.Id,
+                ds.Title,
+                ds.Url,
+                ds.Category,
+                ds.CreatedDate,
+                ActorId = ds.ActorId,
+                ds.ViewCount,
+                ActorImageUrl = ds.Actor.User.PublicUrl
+            })
+            .ToListAsync();
+
+        long maxViewCount = recommendedDemoStars.Max(ds => ds.ViewCount);
+
+        // 메모리에서 관련성 점수를 계산하고 정렬합니다.
+        var sortedRecommendations = recommendedDemoStars
+            .Select(ds => new
+            {
+                DemoStar = ds,
+                RelevanceScore = (ds.Category == currentDemoStar.Category ? 1.0 : 0) +
+                                    NormalizedSimilarity(ds.Title.ToLower(), currentDemoStar.Title.ToLower()) +
+                                    (maxViewCount > 0 ? (double)ds.ViewCount / maxViewCount * 2 : 0)
+            })
+            .OrderByDescending(x => x.RelevanceScore)
+            .ThenByDescending(x => x.DemoStar.CreatedDate)
+            .Take(10)
+            .Select(x => new RecommendedDemoStarDto
+            {
+                demoStarId = x.DemoStar.Id,
+                title = x.DemoStar.Title,
+                url = x.DemoStar.Url,
+                actorId = x.DemoStar.ActorId,
+                actorImageUrl = x.DemoStar.ActorImageUrl
+            })
+            .ToList();
+
+        return sortedRecommendations;
     }
 
     public async Task<ServiceResponse<DemoStarDataResponseDto>> GetDemoStars(string filter = "", string sortBy = "", int page = 1, int limit = 20)
@@ -275,5 +349,38 @@ public class HomeService : IHomeService
         }
 
         return response;
+    }
+
+    // TO DO: Levenshtein Distance : 데이터가 별로 없을 때 detail을 잡기위해 사용 -> 데이터가 많아지면 부하가 많아서 다른 방식으로 변경해야 됨!
+    public static int LevenshteinDistance(string s, string t)
+    {
+        int n = s.Length;
+        int m = t.Length;
+        int[,] d = new int[n + 1, m + 1];
+
+        if (n == 0) return m;
+        if (m == 0) return n;
+
+        for (int i = 0; i <= n; d[i, 0] = i++) { }
+        for (int j = 0; j <= m; d[0, j] = j++) { }
+
+        for (int i = 1; i <= n; i++)
+        {
+            for (int j = 1; j <= m; j++)
+            {
+                int cost = (t[j - 1] == s[i - 1]) ? 0 : 1;
+                d[i, j] = Math.Min(
+                    Math.Min(d[i - 1, j] + 1, d[i, j - 1] + 1),
+                    d[i - 1, j - 1] + cost);
+            }
+        }
+        return d[n, m];
+    }
+
+    public static double NormalizedSimilarity(string s1, string s2)
+    {
+        int maxLength = Math.Max(s1.Length, s2.Length);
+        if (maxLength == 0) return 1.0; // 두 문자열이 모두 빈 문자열인 경우
+        return 1.0 - (double)LevenshteinDistance(s1, s2) / maxLength;
     }
 }
