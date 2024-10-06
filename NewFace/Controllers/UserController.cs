@@ -143,6 +143,24 @@ namespace NewFace.Controllers
             return Ok(response);
         }
 
+        [HttpPost("like")]
+        [SwaggerOperation(Summary = "'좋아요' 업데이트 - 추가/제거")]
+        public async Task<IActionResult> ToggleLike([FromQuery] int demoStarId)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+
+            var userId = int.Parse(userIdClaim.Value);
+
+            var response = await _userService.ToggleLike(userId, demoStarId);
+
+            if (!response.Success)
+            {
+                return StatusCode(500, response);
+            }
+
+            return Ok(response);
+        }
+
         private IActionResult HandleResponse(ServiceResponse<IGetMyPageInfoResponseDto> response)
         {
             if (!response.Success)

@@ -13,7 +13,7 @@ public class Actor
     [ForeignKey("User")]
     public int UserId { get; set; }
     [JsonIgnore]
-    public virtual User User { get; set; } = null!;
+    public virtual Models.User.User User { get; set; } = null!;
 
     [StringLength(255)]
     public string Address { get; set; } = string.Empty; // 주소

@@ -36,5 +36,8 @@
   <ItemGroup>
     <Using Include="Microsoft.EntityFrameworkCore" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="DTOs\Shared\" />
+  </ItemGroup>
 
 </Project>

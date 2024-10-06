@@ -1,4 +1,5 @@
 ﻿using NewFace.Models;
+using NewFace.Models.User;
 using NewFace.Models.Actor;
 using NewFace.Models.Entertainment;
 
@@ -11,10 +12,14 @@ public class DataContext : DbContext
 
     }
 
+    #region user
     public DbSet<User> Users { get; set; }
     public DbSet<UserRole> UserRole { get; set; }
     public DbSet<UserFile> UserFile { get; set; }
     public DbSet<Term> Terms { get; set; }
+    public DbSet<UserLike> UserLikes { get; set; }
+    #endregion
+
 
     #region actor
     public DbSet<Actor> Actors { get; set; }

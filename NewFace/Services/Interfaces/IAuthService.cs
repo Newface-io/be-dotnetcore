@@ -1,5 +1,5 @@
 ﻿using NewFace.DTOs.Auth;
-using NewFace.Models;
+using NewFace.Models.User;
 using NewFace.Responses;
 
 namespace NewFace.Services;

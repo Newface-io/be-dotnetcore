@@ -3,7 +3,7 @@ using Microsoft.IdentityModel.Tokens;
 using NewFace.Common.Constants;
 using NewFace.Data;
 using NewFace.DTOs.Auth;
-using NewFace.Models;
+using NewFace.Models.User;
 using NewFace.Responses;
 using System;
 using System.IdentityModel.Tokens.Jwt;

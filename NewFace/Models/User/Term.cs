@@ -1,9 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 
-namespace NewFace.Models;
+namespace NewFace.Models.User;
 
-public class UserRole
+public class Term
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -13,11 +13,18 @@ public class UserRole
     public int UserId { get; set; }
 
     [Required]
-    [StringLength(100)]
-    public string Role { get; set; } = string.Empty;
+    public int Code { get; set; }
 
-    public DateTime CreatedDate { get; set; } = DateTime.Now;
+    [Required]
+    [StringLength(100)]
+    public string Name { get; set; } = string.Empty;
+
+    [Required]
+    public bool IsAgreed { get; set; }
+
+    [Required]
+    public DateTime LastUpdated { get; set; } = DateTime.Now;
 
     [ForeignKey("UserId")]
-    public virtual User User { get; set; }
+    public User User { get; set; }
 }

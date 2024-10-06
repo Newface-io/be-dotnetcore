@@ -1,6 +1,6 @@
 ﻿using NewFace.Data;
 using NewFace.DTOs.File;
-using NewFace.Models;
+using NewFace.Models.User;
 using System.IO.Compression;
 
 namespace NewFace.Services;

@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 
-namespace NewFace.Models;
+namespace NewFace.Models.User;
 
 public class User
 {
@@ -37,10 +37,11 @@ public class User
     public DateTime LastUpdated { get; set; } = DateTime.Now;
     public bool IsDeleted { get; set; } = false;
 
+    public ICollection<UserLike> Likes { get; set; } = new List<UserLike>();
     public virtual ICollection<Term> TermsAgreements { get; set; } = new HashSet<Term>();
     public virtual ICollection<UserRole> UserRoles { get; set; } = new HashSet<UserRole>();
     public virtual ICollection<UserFile> UserFiles { get; set; } = new HashSet<UserFile>();
-    public virtual Models.Actor.Actor Actor { get; set; } = new Actor.Actor();
-    public virtual Models.Entertainment.Entertainment EntertainmentProfessional { get; set; } = new Entertainment.Entertainment();
+    public virtual Actor.Actor Actor { get; set; } = new Actor.Actor();
+    public virtual Entertainment.Entertainment EntertainmentProfessional { get; set; } = new Entertainment.Entertainment();
 
 }

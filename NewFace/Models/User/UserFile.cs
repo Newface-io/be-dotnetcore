@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 
-namespace NewFace.Models;
+namespace NewFace.Models.User;
 
 public class UserFile
 {

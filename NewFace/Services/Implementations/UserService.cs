@@ -3,6 +3,7 @@ using NewFace.Data;
 using NewFace.DTOs.User;
 using NewFace.Models.Actor;
 using NewFace.Models.Entertainment;
+using NewFace.Models.User;
 using NewFace.Responses;
 
 namespace NewFace.Services;
@@ -105,7 +106,7 @@ public class UserService : IUserService
                 return response;
             }
 
-            var addUserRole = new NewFace.Models.UserRole
+            var addUserRole = new NewFace.Models.User.UserRole
             {
                 UserId = userId,
                 Role = role,
@@ -122,7 +123,7 @@ public class UserService : IUserService
             // Handle different role types
             switch (role)
             {
-                case UserRole.Actor:
+                case NewFace.Common.Constants.UserRole.Actor:
 
                     var existingActor = await _context.Actors.FirstOrDefaultAsync(a => a.UserId == userId);
                     if (existingActor == null)
@@ -143,7 +144,7 @@ public class UserService : IUserService
                     }
 
                     break;
-                case UserRole.Entertainment:
+                case NewFace.Common.Constants.UserRole.Entertainment:
                     var existingEnter = await _context.Entertainments.FirstOrDefaultAsync(a => a.UserId == userId);
                     if (existingEnter == null)
                     {
@@ -459,5 +460,109 @@ public class UserService : IUserService
     {
         return await _context.UserRole
             .AnyAsync(ur => ur.UserId == userId && ur.Role == role);
+    }
+
+
+    public async Task<ServiceResponse<bool>> ToggleLike(int userId, int demoStarId)
+    {
+        var response = new ServiceResponse<bool>();
+
+        using var transaction = await _context.Database.BeginTransactionAsync();
+
+        try
+        {
+            var user = await _context.Users
+                .Include(u => u.UserRoles)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+            var demoStar = await _context.ActorDemoStars.FindAsync(demoStarId);
+
+            if (user == null || demoStar == null)
+            {
+                response.Success = false;
+                response.Code = MessageCode.Custom.INVALID_DATA.ToString();
+                response.Message = MessageCode.CustomMessages[MessageCode.Custom.INVALID_DATA]; ;
+                return response;
+            }
+
+            var existingLike = await _context.UserLikes
+                .FirstOrDefaultAsync(ul => ul.UserId == userId && ul.ItemId == demoStarId && ul.ItemType == LikeType.DemoStar);
+
+            if (existingLike != null)
+            {
+                // Remove like
+                _context.UserLikes.Remove(existingLike);
+                DecrementLikeCount(user, demoStar);
+            }
+            else
+            {
+                // Add like
+                var newLike = new UserLike
+                {
+                    UserId = userId,
+                    ItemId = demoStarId,
+                    ItemType = LikeType.DemoStar,
+                    CreatedDateTime = DateTime.UtcNow
+                };
+
+                _context.UserLikes.Add(newLike);
+                IncrementLikeCount(user, demoStar);
+            }
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            response.Data = true;
+            response.Success = true;
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+
+            response.Success = false;
+            response.Data = false;
+            response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
+            response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
+
+            _logService.LogError("ToggleLike", ex.Message, ex.StackTrace ?? string.Empty);
+        }
+
+        return response;
+    }
+
+    private void IncrementLikeCount(User user, ActorDemoStar demoStar)
+    {
+        var userRoles = user.UserRoles.Select(ur => ur.Role).ToList();
+
+        if (userRoles.Contains(NewFace.Common.Constants.UserRole.Common))
+        {
+            demoStar.LikesFromCommons++;
+        }
+        else if (userRoles.Contains(NewFace.Common.Constants.UserRole.Actor))
+        {
+            demoStar.LikesFromActors++;
+        }
+        else if (userRoles.Contains(NewFace.Common.Constants.UserRole.Entertainment))
+        {
+            demoStar.LikesFromEnters++;
+        }
+    }
+
+
+    private void DecrementLikeCount(User user, ActorDemoStar demoStar)
+    {
+        var userRoles = user.UserRoles.Select(ur => ur.Role).ToList();
+
+        if (userRoles.Contains(NewFace.Common.Constants.UserRole.Common))
+        {
+            demoStar.LikesFromCommons = Math.Max(0, demoStar.LikesFromCommons - 1);
+        }
+        else if (userRoles.Contains(NewFace.Common.Constants.UserRole.Actor))
+        {
+            demoStar.LikesFromActors = Math.Max(0, demoStar.LikesFromActors - 1);
+        }
+        else if (userRoles.Contains(NewFace.Common.Constants.UserRole.Entertainment))
+        {
+            demoStar.LikesFromEnters = Math.Max(0, demoStar.LikesFromEnters - 1);
+        }
     }
 }
