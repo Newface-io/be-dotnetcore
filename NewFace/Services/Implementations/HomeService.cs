@@ -21,7 +21,7 @@ public class HomeService : IHomeService
         _memoryManagementService = memoryManagementService;
     }
 
-    public async Task<ServiceResponse<GetMainPageResponseDto>> GetMainPage()
+    public async Task<ServiceResponse<GetMainPageResponseDto>> GetMainPage(int? userId)
     {
         var response = new ServiceResponse<GetMainPageResponseDto>();
 
@@ -48,7 +48,7 @@ public class HomeService : IHomeService
                 .ToListAsync();
 
             // 2. Get DemoStar data
-            var demoStarResponse = await GetDemoStars();
+            var demoStarResponse = await GetDemoStars(userId);
             if (demoStarResponse.Success)
             {
                 mainPageData.DemoStarData = demoStarResponse.Data?? new DemoStarDataResponseDto { TotalCount = 0, DamoStars = new List<DemoStarItemDto>() };
@@ -195,7 +195,7 @@ public class HomeService : IHomeService
         return sortedRecommendations;
     }
 
-    public async Task<ServiceResponse<DemoStarDataResponseDto>> GetDemoStars(string filter = "", string sortBy = "", int page = 1, int limit = 20)
+    public async Task<ServiceResponse<DemoStarDataResponseDto>> GetDemoStars(int? userId, string filter = "", string sortBy = "", int page = 1, int limit = 20)
     {
         var response = new ServiceResponse<DemoStarDataResponseDto>();
 
@@ -238,13 +238,28 @@ public class HomeService : IHomeService
                 })
                 .ToListAsync();
 
+            // 4. 현재 demostar list중에 해당 user가 like가 있는 리스트
+            var currentPageDemoStarIds = demoStarItems.Select(ds => ds.Id).ToList();
+
+            List<int> userLikedDemoStarIds = new List<int>();
+            if (userId.HasValue)
+            {
+                userLikedDemoStarIds = await _context.UserLikes
+                    .Where(ul => ul.UserId == userId.Value &&
+                                 ul.ItemType == LikeType.DemoStar &&
+                                 currentPageDemoStarIds.Contains(ul.ItemId))
+                    .Select(ul => ul.ItemId)
+                    .ToListAsync();
+            }
+
             response.Data = new DemoStarDataResponseDto
             {
                 TotalCount = totalCount,
                 TotalPages = totalPages,
                 CurrentPage = page,
                 PageSize = limit,
-                DamoStars = demoStarItems
+                DamoStars = demoStarItems,
+                UserLikedDemoStarIds = userLikedDemoStarIds
             };
 
             response.Success = true;

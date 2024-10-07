@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using NewFace.Services;
 using NewFace.Services.Interfaces;
 using Swashbuckle.AspNetCore.Annotations;
+using System.Security.Claims;
 
 namespace NewFace.Controllers
 {
@@ -23,7 +24,18 @@ namespace NewFace.Controllers
         [HttpGet("main-page")]
         public async Task<IActionResult> Index()
         {
-            var response = await _homeService.GetMainPage();
+            int? userId = null;
+
+            if (User.Identity.IsAuthenticated)
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+                if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int parsedUserId))
+                {
+                    userId = parsedUserId;
+                }
+            }
+
+            var response = await _homeService.GetMainPage(userId);
             if (!response.Success)
             {
                 return StatusCode(500, response);
@@ -35,7 +47,18 @@ namespace NewFace.Controllers
         [HttpGet("demo-stars")]
         public async Task<IActionResult> GetDemoStars([FromQuery] string filter = "", [FromQuery] string sortBy = "", [FromQuery] int page = 1)
         {
-            var response = await _homeService.GetDemoStars(filter, sortBy, page);
+            int? userId = null;
+
+            if (User.Identity.IsAuthenticated)
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+                if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int parsedUserId))
+                {
+                    userId = parsedUserId;
+                }
+            }
+
+            var response = await _homeService.GetDemoStars(userId, filter, sortBy, page);
             if (response.Success)
             {
                 return Ok(response);

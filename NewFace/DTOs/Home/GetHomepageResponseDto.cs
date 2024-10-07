@@ -23,6 +23,7 @@ public class DemoStarDataResponseDto
     public int CurrentPage { get; set; }
     public int PageSize { get; set; } = 20;
     public List<DemoStarItemDto> DamoStars { get; set; } = new List<DemoStarItemDto>();
+    public List<int> UserLikedDemoStarIds { get; set; } = new List<int>();
 }
 
 public class DemoStarItemDto
