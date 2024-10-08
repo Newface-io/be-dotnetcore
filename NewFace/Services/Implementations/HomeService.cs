@@ -201,7 +201,6 @@ public class HomeService : IHomeService
 
         try
         {
-
             IQueryable<ActorDemoStar> query = _context.ActorDemoStars.AsNoTracking();
 
             // 1. Filter
@@ -210,7 +209,10 @@ public class HomeService : IHomeService
                 query = query.Where(ds => ds.Category == filter);
             }
 
-            // 2. sortby
+            // 2. Count
+            var totalCount = await query.CountAsync();
+
+            // 3. sortby
             query = sortBy.ToLower() switch
             {
                 "oldest" => query.OrderBy(ds => ds.LastUpdated),
@@ -218,11 +220,7 @@ public class HomeService : IHomeService
                 _ => query.OrderByDescending(ds => ds.Id)
             };
 
-            // 3. pagenation
-            var totalCount = await _context.ActorDemoStars
-                                        .Where(ds => string.IsNullOrEmpty(filter) || ds.Category == filter)
-                                        .CountAsync();
-
+            // 4. pagination
             var totalPages = (int)Math.Ceiling((double)totalCount / limit);
             var skip = (page - 1) * limit;
 
@@ -234,22 +232,29 @@ public class HomeService : IHomeService
                     Id = ds.Id,
                     Title = ds.Title,
                     Category = ds.Category,
-                    Url = ds.Url
+                    Url = ds.Url,
+                    ViewCount = ds.ViewCount,
+                    LikesCount = ds.LikesFromCommons + ds.LikesFromActors + ds.LikesFromEnters,
+                    IsLikedByUser = false
                 })
                 .ToListAsync();
 
-            // 4. 현재 demostar list중에 해당 user가 like가 있는 리스트
-            var currentPageDemoStarIds = demoStarItems.Select(ds => ds.Id).ToList();
-
-            List<int> userLikedDemoStarIds = new List<int>();
+            // 5. 현재 demostar list중에 해당 user가 like가 있는 리스트
             if (userId.HasValue)
             {
-                userLikedDemoStarIds = await _context.UserLikes
+                var likedDemoStarIds = await _context.UserLikes
                     .Where(ul => ul.UserId == userId.Value &&
                                  ul.ItemType == LikeType.DemoStar &&
-                                 currentPageDemoStarIds.Contains(ul.ItemId))
+                                 demoStarItems.Select(ds => ds.Id).Contains(ul.ItemId))
                     .Select(ul => ul.ItemId)
                     .ToListAsync();
+
+                var likedDemoStarIdSet = new HashSet<int>(likedDemoStarIds);
+
+                foreach (var demoStar in demoStarItems)
+                {
+                    demoStar.IsLikedByUser = likedDemoStarIdSet.Contains(demoStar.Id);
+                }
             }
 
             response.Data = new DemoStarDataResponseDto
@@ -258,8 +263,7 @@ public class HomeService : IHomeService
                 TotalPages = totalPages,
                 CurrentPage = page,
                 PageSize = limit,
-                DamoStars = demoStarItems,
-                UserLikedDemoStarIds = userLikedDemoStarIds
+                DamoStars = demoStarItems
             };
 
             response.Success = true;

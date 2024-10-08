@@ -23,7 +23,6 @@ public class DemoStarDataResponseDto
     public int CurrentPage { get; set; }
     public int PageSize { get; set; } = 20;
     public List<DemoStarItemDto> DamoStars { get; set; } = new List<DemoStarItemDto>();
-    public List<int> UserLikedDemoStarIds { get; set; } = new List<int>();
 }
 
 public class DemoStarItemDto
@@ -32,4 +31,7 @@ public class DemoStarItemDto
     public string Title { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
     public string Url { get; set; } = string.Empty;
+    public long ViewCount { get; set; } = 0;
+    public int LikesCount {  get; set; } = 0;
+    public bool IsLikedByUser { get; set; } = false;
 }
