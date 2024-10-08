@@ -11,5 +11,5 @@ public interface IUserService
     Task<ServiceResponse<GetUserInfoForEditResponseDto>> GetUserInfoForEdit(int userId);
     Task<ServiceResponse<bool>> UpdateUserInfoForEdit(int userId, UpdateUserInfoForEditResponseDto model);
     Task<bool> HasUserRoleAsync(int userId, string role);
-    Task<ServiceResponse<bool>> ToggleLike(int userId, int demoStarId, string likeType);
+    Task<ServiceResponse<bool>> ToggleLike(int userId, int itemId, string likeType);
 }

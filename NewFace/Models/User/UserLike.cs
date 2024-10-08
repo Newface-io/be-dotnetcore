@@ -10,7 +10,7 @@ public class UserLike
     public int UserId { get; set; }
     [JsonIgnore]
     public virtual Models.User.User User { get; set; } = null!;
-    public string ItemType { get; set; } = string.Empty; // e.g., "DemoStar", ...
+    public string ItemType { get; set; } = string.Empty; // e.g., "DemoStar", "Portfolio"
     public int ItemId { get; set; }
     public DateTime CreatedDateTime { get; set; } = DateTime.Now;
 }

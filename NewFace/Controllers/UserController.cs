@@ -145,13 +145,31 @@ namespace NewFace.Controllers
 
         [HttpPost("like/demostar")]
         [SwaggerOperation(Summary = "데모스타 '좋아요' 업데이트 - 추가/제거")]
-        public async Task<IActionResult> ToggleLike([FromQuery] int demoStarId)
+        public async Task<IActionResult> ToggleLikeForDemoStar([FromQuery] int demoStarId)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
 
             var userId = int.Parse(userIdClaim.Value);
 
             var response = await _userService.ToggleLike(userId, demoStarId, LikeType.DemoStar);
+
+            if (!response.Success)
+            {
+                return StatusCode(500, response);
+            }
+
+            return Ok(response);
+        }
+
+        [HttpPost("bookmark")]
+        [SwaggerOperation(Summary = "배우 포트폴리오 북마크 - 추가/제거")]
+        public async Task<IActionResult> ToggleLikeForBookMark([FromQuery] int actorId)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+
+            var userId = int.Parse(userIdClaim.Value);
+
+            var response = await _userService.ToggleLike(userId, actorId, LikeType.Portfolio);
 
             if (!response.Success)
             {

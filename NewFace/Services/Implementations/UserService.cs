@@ -462,8 +462,9 @@ public class UserService : IUserService
             .AnyAsync(ur => ur.UserId == userId && ur.Role == role);
     }
 
-
-    public async Task<ServiceResponse<bool>> ToggleLike(int userId, int demoStarId, string likeType)
+    /// <param name="itemId"></param> DemoStar ID | Actor ID
+    /// <param name="likeType"></param> DemoStar | Portpolio
+    public async Task<ServiceResponse<bool>> ToggleLike(int userId, int itemId, string likeType)
     {
         var response = new ServiceResponse<bool>();
 
@@ -472,40 +473,88 @@ public class UserService : IUserService
         try
         {
             var user = await _context.Users
-                .Include(u => u.UserRoles)
-                .FirstOrDefaultAsync(u => u.Id == userId);
-            var demoStar = await _context.ActorDemoStars.FindAsync(demoStarId);
+            .Include(u => u.UserRoles)
+            .FirstOrDefaultAsync(u => u.Id == userId);
 
-            if (user == null || demoStar == null)
+            switch (likeType)
             {
-                response.Success = false;
-                response.Code = MessageCode.Custom.INVALID_DATA.ToString();
-                response.Message = MessageCode.CustomMessages[MessageCode.Custom.INVALID_DATA]; ;
-                return response;
-            }
+                // itemId: demostarId
+                case LikeType.DemoStar:
 
-            var existingLike = await _context.UserLikes
-                .FirstOrDefaultAsync(ul => ul.UserId == userId && ul.ItemId == demoStarId && ul.ItemType == likeType);
+                    var demoStar = await _context.ActorDemoStars.FindAsync(itemId); 
 
-            if (existingLike != null)
-            {
-                // Remove like
-                _context.UserLikes.Remove(existingLike);
-                DecrementLikeCount(user, demoStar);
-            }
-            else
-            {
-                // Add like
-                var newLike = new UserLike
-                {
-                    UserId = userId,
-                    ItemId = demoStarId,
-                    ItemType = LikeType.DemoStar,
-                    CreatedDateTime = DateTime.UtcNow
-                };
+                    if (user == null || demoStar == null)
+                    {
+                        response.Success = false;
+                        response.Code = MessageCode.Custom.INVALID_DATA.ToString();
+                        response.Message = MessageCode.CustomMessages[MessageCode.Custom.INVALID_DATA];
+                        return response;
+                    }
 
-                _context.UserLikes.Add(newLike);
-                IncrementLikeCount(user, demoStar);
+                    var existingLikeForDemoStar = await _context.UserLikes
+                        .FirstOrDefaultAsync(ul => ul.UserId == userId && ul.ItemId == itemId && ul.ItemType == likeType);
+
+                    if (existingLikeForDemoStar != null)
+                    {
+                        // Remove like
+                        _context.UserLikes.Remove(existingLikeForDemoStar);
+                        DecrementLikeCount(user, demoStar);
+                    }
+                    else
+                    {
+                        // Add like
+                        var newLike = new UserLike
+                        {
+                            UserId = userId,
+                            ItemId = itemId,
+                            ItemType = LikeType.DemoStar,
+                            CreatedDateTime = DateTime.UtcNow
+                        };
+
+                        _context.UserLikes.Add(newLike);
+                        IncrementLikeCount(user, demoStar);
+                    }
+                    break;
+
+                // itemId: actorId
+                case LikeType.Portfolio:
+
+                    var actor = await _context.Actors.FindAsync(itemId);
+
+                    if (user == null || actor == null)
+                    {
+                        response.Success = false;
+                        response.Code = MessageCode.Custom.INVALID_DATA.ToString();
+                        response.Message = MessageCode.CustomMessages[MessageCode.Custom.INVALID_DATA];
+                        return response;
+                    }
+
+                    var existingLikeForPortfolio = await _context.UserLikes
+                        .FirstOrDefaultAsync(ul => ul.UserId == userId && ul.ItemId == itemId && ul.ItemType == likeType);
+
+                    if (existingLikeForPortfolio != null)
+                    {
+                        // Remove like
+                        _context.UserLikes.Remove(existingLikeForPortfolio);
+                        DecrementLikeCount(user, actor);
+                    }
+                    else
+                    {
+                        // Add like
+                        var newLike = new UserLike
+                        {
+                            UserId = userId,
+                            ItemId = itemId,
+                            ItemType = LikeType.Portfolio,
+                            CreatedDateTime = DateTime.UtcNow
+                        };
+
+                        _context.UserLikes.Add(newLike);
+                        IncrementLikeCount(user, actor);
+                    }
+                    break;
+                default:
+                    break;
             }
 
             await _context.SaveChangesAsync();
@@ -547,6 +596,24 @@ public class UserService : IUserService
         }
     }
 
+    private void IncrementLikeCount(User user, Actor actor)
+    {
+        var userRoles = user.UserRoles.Select(ur => ur.Role).ToList();
+
+        if (userRoles.Contains(NewFace.Common.Constants.UserRole.Common))
+        {
+            actor.LikesFromCommons++;
+        }
+        else if (userRoles.Contains(NewFace.Common.Constants.UserRole.Actor))
+        {
+            actor.LikesFromActors++;
+        }
+        else if (userRoles.Contains(NewFace.Common.Constants.UserRole.Entertainment))
+        {
+            actor.LikesFromEnters++;
+        }
+    }
+
 
     private void DecrementLikeCount(User user, ActorDemoStar demoStar)
     {
@@ -563,6 +630,24 @@ public class UserService : IUserService
         else if (userRoles.Contains(NewFace.Common.Constants.UserRole.Entertainment))
         {
             demoStar.LikesFromEnters = Math.Max(0, demoStar.LikesFromEnters - 1);
+        }
+    }
+
+    private void DecrementLikeCount(User user, Actor actor)
+    {
+        var userRoles = user.UserRoles.Select(ur => ur.Role).ToList();
+
+        if (userRoles.Contains(NewFace.Common.Constants.UserRole.Common))
+        {
+            actor.LikesFromCommons = Math.Max(0, actor.LikesFromCommons - 1);
+        }
+        else if (userRoles.Contains(NewFace.Common.Constants.UserRole.Actor))
+        {
+            actor.LikesFromActors = Math.Max(0, actor.LikesFromActors - 1);
+        }
+        else if (userRoles.Contains(NewFace.Common.Constants.UserRole.Entertainment))
+        {
+            actor.LikesFromEnters = Math.Max(0, actor.LikesFromEnters - 1);
         }
     }
 }
