@@ -31,7 +31,7 @@ public class DemoStarItemDto
     public string Title { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
     public string Url { get; set; } = string.Empty;
-    public long ViewCount { get; set; } = 0;
-    public int LikesCount {  get; set; } = 0;
-    public bool IsLikedByUser { get; set; } = false;
+    public long ViewCount { get; set; } = 0; // 조회수
+    public int LikesCount { get; set; } = 0; // 전체 좋아요 개수
+    public bool IsLikedByUser { get; set; } = false; // Like 유무
 }

@@ -73,7 +73,7 @@ public class HomeService : IHomeService
         return response;
     }
 
-    public async Task<ServiceResponse<GetDemoStarResponseDto>> GetDemoStar(int demoStarId)
+    public async Task<ServiceResponse<GetDemoStarResponseDto>> GetDemoStar(int? userId, int demoStarId)
     {
         var response = new ServiceResponse<GetDemoStarResponseDto>();
 
@@ -111,6 +111,11 @@ public class HomeService : IHomeService
                         Category = ds.Category,
                         Url = ds.Url,
                         ViewCount = ds.ViewCount,
+                        LikesCount = ds.LikesFromCommons + ds.LikesFromActors + ds.LikesFromEnters,
+                        IsLikedByUser = userId.HasValue && _context.UserLikes.Any(ul =>
+                                                ul.UserId == userId.Value &&
+                                                ul.ItemId == ds.Id &&
+                                                ul.ItemType == LikeType.DemoStar),
                         CreatedDate = ds.CreatedDate,
                         LastUpdated = ds.LastUpdated
                     }

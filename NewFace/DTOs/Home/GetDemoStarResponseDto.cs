@@ -21,6 +21,8 @@ public class DemoStarData
     public string Category { get; set; } = string.Empty; // 작품 카테고리
     public string Url { get; set; } = string.Empty; // Url
     public long ViewCount { get; set; } = 0; // 조회수
+    public int LikesCount { get; set; } = 0; // 전체 좋아요 개수
+    public bool IsLikedByUser { get; set; } = false; // Like 유무
     public DateTime CreatedDate { get; set; } = DateTime.Now;
     public DateTime LastUpdated { get; set; } = DateTime.Now;
 }

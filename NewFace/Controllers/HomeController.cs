@@ -82,7 +82,18 @@ namespace NewFace.Controllers
         [HttpGet("demo-star")]
         public async Task<IActionResult> GetDemoStar([FromQuery] int demoStarId)
         {
-            var response = await _homeService.GetDemoStar(demoStarId);
+            int? userId = null;
+
+            if (User.Identity.IsAuthenticated)
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+                if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int parsedUserId))
+                {
+                    userId = parsedUserId;
+                }
+            }
+
+            var response = await _homeService.GetDemoStar(userId, demoStarId);
             if (response.Success)
             {
                 return Ok(response);

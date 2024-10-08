@@ -8,5 +8,5 @@ public interface IHomeService
     Task<ServiceResponse<GetMainPageResponseDto>> GetMainPage(int? userId);
     Task<ServiceResponse<DemoStarDataResponseDto>> GetDemoStars(int? userId, string filter = "", string sortBy = "", int page = 1, int limit = 20);
     Task<ServiceResponse<GetActorPortfolioResponseDto>> GetAllActorPortfolios(string filter = "", string sortBy = "", int page = 1, int limit = 50);
-    Task<ServiceResponse<GetDemoStarResponseDto>> GetDemoStar(int demoStarId);
+    Task<ServiceResponse<GetDemoStarResponseDto>> GetDemoStar(int? userId, int demoStarId);
 }
