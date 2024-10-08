@@ -285,7 +285,7 @@ public class HomeService : IHomeService
         return response;
     }
 
-    public async Task<ServiceResponse<GetActorPortfolioResponseDto>> GetAllActorPortfolios(string filter = "", string sortBy = "", int page = 1, int limit = 50)
+    public async Task<ServiceResponse<GetActorPortfolioResponseDto>> GetAllActorPortfolios(int? userId, string filter = "", string sortBy = "", int page = 1, int limit = 50)
     {
         var allActors = await _memoryManagementService.GetOrSetCache("AllActorPortfolios", async () =>
         {
@@ -307,10 +307,30 @@ public class HomeService : IHomeService
                     MainImageUrl = a.Images
                         .Where(i => i.IsMainImage)
                         .Select(i => i.StoragePath)
-                        .FirstOrDefault() ?? string.Empty
+                        .FirstOrDefault() ?? string.Empty,
+                    BookMarksCount = a.LikesFromCommons + a.LikesFromActors + a.LikesFromEnters,
+                    IsBookMarkeeByUser = false
                 })
                 .ToListAsync();
         });
+
+        // 5. 현재 demostar list중에 해당 user가 bookmark가 있는 리스트
+        if (userId.HasValue)
+        {
+            var likedBookMarkIds = await _context.UserLikes
+                .Where(ul => ul.UserId == userId.Value &&
+                             ul.ItemType == LikeType.Portfolio &&
+                             allActors.Select(ds => ds.ActorId).Contains(ul.ItemId))
+                .Select(ul => ul.ItemId)
+                .ToListAsync();
+
+            var likedBookMarkIdSet = new HashSet<int>(likedBookMarkIds);
+
+            foreach (var actor in allActors)
+            {
+                actor.IsBookMarkeeByUser = likedBookMarkIdSet.Contains(actor.ActorId);
+            }
+        }
 
         var response = new ServiceResponse<GetActorPortfolioResponseDto>();
 

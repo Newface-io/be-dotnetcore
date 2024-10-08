@@ -70,7 +70,18 @@ namespace NewFace.Controllers
         [HttpGet("portfolios")]
         public async Task<IActionResult> GetAllActorPortfolios([FromQuery] string filter = "", [FromQuery] string sortBy = "", [FromQuery] int page = 1)
         {
-            var response = await _homeService.GetAllActorPortfolios(filter, sortBy, page);
+            int? userId = null;
+
+            if (User.Identity.IsAuthenticated)
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+                if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int parsedUserId))
+                {
+                    userId = parsedUserId;
+                }
+            }
+
+            var response = await _homeService.GetAllActorPortfolios(userId, filter, sortBy, page);
             if (response.Success)
             {
                 return Ok(response);

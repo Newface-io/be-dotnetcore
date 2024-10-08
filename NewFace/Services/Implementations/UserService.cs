@@ -14,13 +14,15 @@ public class UserService : IUserService
     private readonly ILogService _logService;
     private readonly IAuthService _authService;
     private readonly IFileService _fileService;
+    private readonly IMemoryManagementService _memoryManagementService;
 
-    public UserService(DataContext context, ILogService logService, IAuthService authService, IFileService fileService)
+    public UserService(DataContext context, ILogService logService, IAuthService authService, IFileService fileService, IMemoryManagementService memoryManagementService)
     {
         _context = context;
         _logService = logService;
         _authService = authService;
         _fileService = fileService;
+        _memoryManagementService = memoryManagementService;
     }
 
     public async Task<ServiceResponse<bool>> DeleteUser(int userId)
@@ -559,6 +561,8 @@ public class UserService : IUserService
 
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
+
+            await _memoryManagementService.InvalidateCache("AllActorPortfolios");
 
             response.Data = true;
             response.Success = true;

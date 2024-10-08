@@ -19,4 +19,6 @@ public class ActorPortfolioDto
     public DateTime? CreatedDate { get; set; }
     public DateTime? LastUpdated { get; set; }
     public string MainImageUrl { get; set; } = string.Empty;
+    public int BookMarksCount { get; set; } = 0; // 북마크 개수
+    public bool IsBookMarkeeByUser { get; set; } = false; // BookMark 유무
 }
