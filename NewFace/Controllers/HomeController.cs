@@ -89,27 +89,6 @@ namespace NewFace.Controllers
             return BadRequest(response);
         }
 
-        [SwaggerOperation(Summary = "메인 페이지 - 데모스타 Detail")]
-        [HttpGet("demo-star")]
-        public async Task<IActionResult> GetDemoStar([FromQuery] int demoStarId)
-        {
-            int? userId = null;
-
-            if (User.Identity.IsAuthenticated)
-            {
-                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-                if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int parsedUserId))
-                {
-                    userId = parsedUserId;
-                }
-            }
-
-            var response = await _homeService.GetDemoStar(userId, demoStarId);
-            if (response.Success)
-            {
-                return Ok(response);
-            }
-            return BadRequest(response);
-        }
+        
     }
 }

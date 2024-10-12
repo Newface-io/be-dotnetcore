@@ -25,6 +25,7 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1_auth", new OpenApiInfo { Title = "Auth API", Version = "v1" });
     c.SwaggerDoc("v1_home", new OpenApiInfo { Title = "Home API", Version = "v1" });
     c.SwaggerDoc("v1_user", new OpenApiInfo { Title = "User API", Version = "v1" });
+    c.SwaggerDoc("v1_commonactor", new OpenApiInfo { Title = "Common Actor API", Version = "v1" });
     c.SwaggerDoc("v1_actor", new OpenApiInfo { Title = "Actor API", Version = "v1" });
     c.SwaggerDoc("v1_entertainment", new OpenApiInfo { Title = "Entertainment API", Version = "v1" });
 
@@ -61,7 +62,7 @@ builder.Services.AddSwaggerGen(c =>
         if (!apiDesc.TryGetMethodInfo(out MethodInfo methodInfo)) return false;
 
         var controllerName = methodInfo.DeclaringType.Name.ToLower().Replace("controller", "");
-        return docName.ToLower().Contains(controllerName);
+        return docName.Equals($"v1_{controllerName}", StringComparison.OrdinalIgnoreCase);
     });
 
     c.EnableAnnotations();
@@ -158,7 +159,8 @@ app.UseSwaggerUI(c =>
     c.SwaggerEndpoint("/swagger/v1_auth/swagger.json", "Auth");
     c.SwaggerEndpoint("/swagger/v1_home/swagger.json", "Home");
     c.SwaggerEndpoint("/swagger/v1_user/swagger.json", "User");
-    c.SwaggerEndpoint("/swagger/v1_actor/swagger.json", "Actor");
+    c.SwaggerEndpoint("/swagger/v1_commonactor/swagger.json", "Common Actor API");
+    c.SwaggerEndpoint("/swagger/v1_actor/swagger.json", "Actor API");
     c.SwaggerEndpoint("/swagger/v1_entertainment/swagger.json", "Entertainment");
 });
 
