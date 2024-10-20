@@ -18,8 +18,8 @@ public class User
     [StringLength(255)]
     public string Email { get; set; } = string.Empty;
 
-    [Required]
-    public string PasswordHash { get; set; } = string.Empty;
+    //[Required]
+    //public string PasswordHash { get; set; } = string.Empty;
 
     [Required]
     [StringLength(20)]
@@ -37,9 +37,10 @@ public class User
     public DateTime LastUpdated { get; set; } = DateTime.Now;
     public bool IsDeleted { get; set; } = false;
 
+    public virtual UserAuth UserAuth { get; set; } = new UserAuth();
+    public virtual ICollection<UserRole> UserRoles { get; set; } = new HashSet<UserRole>();
     public ICollection<UserLike> Likes { get; set; } = new List<UserLike>();
     public virtual ICollection<Term> TermsAgreements { get; set; } = new HashSet<Term>();
-    public virtual ICollection<UserRole> UserRoles { get; set; } = new HashSet<UserRole>();
     public virtual ICollection<UserFile> UserFiles { get; set; } = new HashSet<UserFile>();
     public virtual Actor.Actor Actor { get; set; } = new Actor.Actor();
     public virtual Entertainment.Entertainment EntertainmentProfessional { get; set; } = new Entertainment.Entertainment();

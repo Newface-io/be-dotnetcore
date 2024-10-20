@@ -64,7 +64,7 @@ public class ActorService : IActorService
                 Bio = user.Actor.Bio ?? string.Empty,
                 Gender = user.Gender ?? string.Empty,
 
-                Role = NewFace.Common.Constants.UserRole.Actor,
+                Role = NewFace.Common.Constants.USER_ROLE.ACTOR,
 
                 ActorEducations = user.Actor.Education.ToList(),
                 ActorExperiences = user.Actor.Experiences.ToList(),

@@ -125,7 +125,7 @@ public class UserService : IUserService
             // Handle different role types
             switch (role)
             {
-                case NewFace.Common.Constants.UserRole.Actor:
+                case NewFace.Common.Constants.USER_ROLE.ACTOR:
 
                     var existingActor = await _context.Actors.FirstOrDefaultAsync(a => a.UserId == userId);
                     if (existingActor == null)
@@ -146,7 +146,7 @@ public class UserService : IUserService
                     }
 
                     break;
-                case NewFace.Common.Constants.UserRole.Entertainment:
+                case NewFace.Common.Constants.USER_ROLE.ENTER:
                     var existingEnter = await _context.Entertainments.FirstOrDefaultAsync(a => a.UserId == userId);
                     if (existingEnter == null)
                     {
@@ -211,7 +211,7 @@ public class UserService : IUserService
         {
             switch (role)
             {
-                case NewFace.Common.Constants.UserRole.Actor:
+                case NewFace.Common.Constants.USER_ROLE.ACTOR:
 
                     if (!roleSpecificId.HasValue)
                     {
@@ -245,7 +245,7 @@ public class UserService : IUserService
 
                     break;
 
-                case NewFace.Common.Constants.UserRole.Entertainment:
+                case NewFace.Common.Constants.USER_ROLE.ENTER:
 
                     if (!roleSpecificId.HasValue)
                     {
@@ -455,7 +455,7 @@ public class UserService : IUserService
 
     private bool IsValidRole(string role)
     {
-        return Common.Constants.UserRole.AllRoles.Contains(role);
+        return Common.Constants.USER_ROLE.AllRoles.Contains(role);
     }
 
     public async Task<bool> HasUserRoleAsync(int userId, string role)
@@ -586,15 +586,15 @@ public class UserService : IUserService
     {
         var userRoles = user.UserRoles.Select(ur => ur.Role).ToList();
 
-        if (userRoles.Contains(NewFace.Common.Constants.UserRole.Common))
+        if (userRoles.Contains(NewFace.Common.Constants.USER_ROLE.COMMON))
         {
             demoStar.LikesFromCommons++;
         }
-        else if (userRoles.Contains(NewFace.Common.Constants.UserRole.Actor))
+        else if (userRoles.Contains(NewFace.Common.Constants.USER_ROLE.ACTOR))
         {
             demoStar.LikesFromActors++;
         }
-        else if (userRoles.Contains(NewFace.Common.Constants.UserRole.Entertainment))
+        else if (userRoles.Contains(NewFace.Common.Constants.USER_ROLE.ENTER))
         {
             demoStar.LikesFromEnters++;
         }
@@ -604,15 +604,15 @@ public class UserService : IUserService
     {
         var userRoles = user.UserRoles.Select(ur => ur.Role).ToList();
 
-        if (userRoles.Contains(NewFace.Common.Constants.UserRole.Common))
+        if (userRoles.Contains(NewFace.Common.Constants.USER_ROLE.COMMON))
         {
             actor.LikesFromCommons++;
         }
-        else if (userRoles.Contains(NewFace.Common.Constants.UserRole.Actor))
+        else if (userRoles.Contains(NewFace.Common.Constants.USER_ROLE.ACTOR))
         {
             actor.LikesFromActors++;
         }
-        else if (userRoles.Contains(NewFace.Common.Constants.UserRole.Entertainment))
+        else if (userRoles.Contains(NewFace.Common.Constants.USER_ROLE.ENTER))
         {
             actor.LikesFromEnters++;
         }
@@ -623,15 +623,15 @@ public class UserService : IUserService
     {
         var userRoles = user.UserRoles.Select(ur => ur.Role).ToList();
 
-        if (userRoles.Contains(NewFace.Common.Constants.UserRole.Common))
+        if (userRoles.Contains(NewFace.Common.Constants.USER_ROLE.COMMON))
         {
             demoStar.LikesFromCommons = Math.Max(0, demoStar.LikesFromCommons - 1);
         }
-        else if (userRoles.Contains(NewFace.Common.Constants.UserRole.Actor))
+        else if (userRoles.Contains(NewFace.Common.Constants.USER_ROLE.ACTOR))
         {
             demoStar.LikesFromActors = Math.Max(0, demoStar.LikesFromActors - 1);
         }
-        else if (userRoles.Contains(NewFace.Common.Constants.UserRole.Entertainment))
+        else if (userRoles.Contains(NewFace.Common.Constants.USER_ROLE.ENTER))
         {
             demoStar.LikesFromEnters = Math.Max(0, demoStar.LikesFromEnters - 1);
         }
@@ -641,15 +641,15 @@ public class UserService : IUserService
     {
         var userRoles = user.UserRoles.Select(ur => ur.Role).ToList();
 
-        if (userRoles.Contains(NewFace.Common.Constants.UserRole.Common))
+        if (userRoles.Contains(NewFace.Common.Constants.USER_ROLE.COMMON))
         {
             actor.LikesFromCommons = Math.Max(0, actor.LikesFromCommons - 1);
         }
-        else if (userRoles.Contains(NewFace.Common.Constants.UserRole.Actor))
+        else if (userRoles.Contains(NewFace.Common.Constants.USER_ROLE.ACTOR))
         {
             actor.LikesFromActors = Math.Max(0, actor.LikesFromActors - 1);
         }
-        else if (userRoles.Contains(NewFace.Common.Constants.UserRole.Entertainment))
+        else if (userRoles.Contains(NewFace.Common.Constants.USER_ROLE.ENTER))
         {
             actor.LikesFromEnters = Math.Max(0, actor.LikesFromEnters - 1);
         }

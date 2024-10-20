@@ -142,6 +142,8 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+builder.Services.AddHttpClient(); // service에서 외부 api 호출(http)을 위해서(ex: kakao login)
+
 var app = builder.Build();
 
 DatabaseManagementService.MigrationInitialisation(app);

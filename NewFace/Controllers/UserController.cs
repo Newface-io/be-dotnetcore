@@ -94,11 +94,11 @@ namespace NewFace.Controllers
 
             int? roleSpecificId = null;
 
-            if (userRole == NewFace.Common.Constants.UserRole.Actor)
+            if (userRole == NewFace.Common.Constants.USER_ROLE.ACTOR)
             {
                 roleSpecificId = User.FindFirst("ActorId")?.Value != null ? int.Parse(User.FindFirst("ActorId").Value) : null;
             }
-            else if (userRole == NewFace.Common.Constants.UserRole.Entertainment)
+            else if (userRole == NewFace.Common.Constants.USER_ROLE.ENTER)
             {
                 roleSpecificId = User.FindFirst("EnterId")?.Value != null ? int.Parse(User.FindFirst("EnterId").Value) : null;
             }

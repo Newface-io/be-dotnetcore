@@ -1,18 +1,18 @@
 ﻿namespace NewFace.Common.Constants;
 
-public static class UserRole
+public static class USER_ROLE
 {
-    public const string Entertainment = "Entertainment";
-    public const string Actor = "Actor";
-    public const string Common = "Common";
-    public const string Admin = "Admin";
+    public const string ENTER = "Enter";
+    public const string ACTOR = "Actor";
+    public const string COMMON = "Common";
+    public const string ADMIN = "Admin";
 
     public static readonly string[] AllRoles =
     {
-            Entertainment,
-            Actor,
-            Common,
-            Admin
+            ENTER,
+            ACTOR,
+            COMMON,
+            ADMIN
     };
 
 }

@@ -7,9 +7,11 @@ using NewFace.Models.User;
 using NewFace.Responses;
 using System;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using Twilio;
 using Twilio.Rest.Api.V2010.Account;
 
@@ -20,24 +22,38 @@ public class AuthService : IAuthService
     private readonly DataContext _context;
     private readonly ILogService _logService;
     private readonly IDistributedCache _cache;
+
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IHttpClientFactory _httpClientFactory;
+
     private readonly string _jwtSecretKey;
     private readonly string _redisAccountSid;
     private readonly string _jwtAuthToken;
     private readonly string _jwtSendNumber;
 
-    public AuthService(DataContext context, ILogService logService, IDistributedCache cache, IHttpContextAccessor httpContextAccessor)
+    private readonly string _kakaoClientId;
+    private readonly string _kakaoClientSecret;
+    private readonly string _kakaoRedirectUri;
+    private readonly string _kakaoAuthUrl;
+
+    public AuthService(DataContext context, ILogService logService, IDistributedCache cache, IHttpContextAccessor httpContextAccessor, IHttpClientFactory httpClientFactory)
     {
         _context = context;
         _logService = logService;
         _cache = cache;
-        _httpContextAccessor = httpContextAccessor;
+
+        _httpClientFactory = httpClientFactory; // 외부 api 호출을 위해
+        _httpContextAccessor = httpContextAccessor; // 현재 요청과 관련된 정보(현재 HTTP 요청의 컨텍스트에 접근) 
 
         _jwtSecretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") ?? string.Empty;
         _redisAccountSid = Environment.GetEnvironmentVariable("REDIS_ACCOUNT_SID") ?? string.Empty;
         _jwtAuthToken = Environment.GetEnvironmentVariable("REDIS_AUTH_TOKEN") ?? string.Empty;
         _jwtSendNumber = Environment.GetEnvironmentVariable("REDIS_SEND_NUMBER") ?? string.Empty;
 
+        _kakaoClientId = Environment.GetEnvironmentVariable("KAKAO_CLIENT_ID") ?? string.Empty;
+        _kakaoClientSecret = Environment.GetEnvironmentVariable("KAKAO_CLIENT_SECRET") ?? string.Empty;
+        _kakaoRedirectUri = Environment.GetEnvironmentVariable("KAKAO_REDIRECT_URI_LOCAL") ?? string.Empty;
+        _kakaoAuthUrl = Environment.GetEnvironmentVariable("KAKAO_AUTH_URL") ?? string.Empty;
     }
 
     public int? GetUserIdFromToken()
@@ -57,7 +73,7 @@ public class AuthService : IAuthService
         return null;
     }
 
-    public async Task<ServiceResponse<int>> SignUp(SignUpRequestDto request)
+    public async Task<ServiceResponse<int>> SignUpEmail(SignUpRequestDto request)
     {
         var response = new ServiceResponse<int>();
 
@@ -81,10 +97,9 @@ public class AuthService : IAuthService
             {
                 Name = request.Name,
                 Email = request.Email,
-                PasswordHash = passwordHash,
                 Phone = request.Phone,
-                CreatedDate = DateTime.UtcNow,
-                LastUpdated = DateTime.UtcNow
+                CreatedDate = DateTime.Now,
+                LastUpdated = DateTime.Now
             };
 
             if (!_context.Users.Local.Any(u => u.Email == user.Email))
@@ -94,7 +109,16 @@ public class AuthService : IAuthService
 
             await _context.SaveChangesAsync();
 
-            // 
+            var userAuth = new UserAuth
+            {
+                UserId = user.Id,
+                AuthKey = USER_AUTH.EMAIL,
+                AuthValue = passwordHash,
+                UpdatedDate = DateTime.Now,
+            };
+
+            _context.UserAuth.Add(userAuth);
+
             foreach (var termDto in request.TermsAgreements)
             {
                 var term = new Term
@@ -132,7 +156,7 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task<ServiceResponse<SignInResponseDto>> SignIn(SignInRequestDto request)
+    public async Task<ServiceResponse<SignInResponseDto>> SignInEmail(SignInRequestDto request)
     {
         var response = new ServiceResponse<SignInResponseDto>();
 
@@ -141,11 +165,12 @@ public class AuthService : IAuthService
             var token = string.Empty;
 
             var user = await _context.Users
+                            .Include(u => u.UserAuth)
                             .Include(u => u.UserRoles)
                             .FirstOrDefaultAsync(u => u.Email == request.Email);
 
             // 1. check email
-            if (user == null)
+            if (user == null || user.UserAuth == null)
             {
                 response.Success = false;
                 response.Data = null;
@@ -164,7 +189,7 @@ public class AuthService : IAuthService
             }
 
             // 2. check password
-            if (!VerifyPassword(request.Password, user.PasswordHash))
+            if (!VerifyPassword(request.Password, user.UserAuth.AuthValue))
             {
                 response.Success = false;
                 response.Data = null;
@@ -190,7 +215,7 @@ public class AuthService : IAuthService
             // 5. Set specific ID based on role
             switch (userRole)
             {
-                case NewFace.Common.Constants.UserRole.Actor:
+                case NewFace.Common.Constants.USER_ROLE.ACTOR:
                     response.Data.actorId = await _context.Actors
                         .Where(a => a.UserId == user.Id)
                         .Select(a => a.Id)
@@ -200,7 +225,7 @@ public class AuthService : IAuthService
                     token = GenerateJwtToken(user, userRole, response.Data.actorId??0);
 
                     break;
-                case NewFace.Common.Constants.UserRole.Entertainment:
+                case NewFace.Common.Constants.USER_ROLE.ENTER:
                     response.Data.enterId = await _context.Entertainments
                         .Where(e => e.UserId == user.Id)
                         .Select(e => e.Id)
@@ -232,6 +257,77 @@ public class AuthService : IAuthService
         }
 
     }
+
+    public string GetKakaoLoginUrl()
+    {
+        return $"{_kakaoAuthUrl}?client_id={_kakaoClientId}&redirect_uri={_kakaoRedirectUri}&response_type=code";
+    }
+
+    public async Task<string> GetKakaoToken(string code)
+    {
+        using var client = _httpClientFactory.CreateClient();
+
+        var response = await client.PostAsync("https://kauth.kakao.com/oauth/token",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+            {"grant_type", "authorization_code"},
+            {"client_id", _kakaoClientId},
+            {"client_secret", _kakaoClientSecret}, // client_secret 추가
+            {"redirect_uri", _kakaoRedirectUri},
+            {"code", code}
+            }));
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            throw new HttpRequestException($"Kakao token request failed: {response.StatusCode}, {errorContent}");
+        }
+
+        var content = await response.Content.ReadFromJsonAsync<JsonElement>();
+        return content.GetProperty("access_token").GetString();
+    }
+
+    public async Task<ServiceResponse<KakaoUserInfoResponseDto>> GetKakaoUserInfo(string accessToken)
+    {
+        var response = new ServiceResponse<KakaoUserInfoResponseDto>();
+
+        try
+        {
+            using var client = _httpClientFactory.CreateClient();
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            var responseFromKakao = await client.GetFromJsonAsync<JsonElement>("https://kapi.kakao.com/v2/user/me");
+
+            if (responseFromKakao.TryGetProperty("id", out JsonElement idElement) &&
+                responseFromKakao.TryGetProperty("connected_at", out JsonElement connectedAtElement))
+            {
+                response.Data = new KakaoUserInfoResponseDto()
+                {
+                    Id = idElement.GetInt64(),
+                    ConnectedAt = connectedAtElement.GetString()
+                };
+
+                return response;
+            }
+            else
+            {
+                response.Success = false;
+                return response;
+            }
+
+        }
+        catch (Exception ex)
+        {
+            response.Success = false;
+            response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
+            response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
+
+            _logService.LogError("EXCEPTION: GetKakaoUserInfo", ex.Message, "ip: ");
+
+            return response;
+        }
+    }
+
 
     public string CreateHashPassword(string password)
     {
@@ -286,13 +382,13 @@ public class AuthService : IAuthService
 
         switch (role)
         {
-            case NewFace.Common.Constants.UserRole.Actor:
+            case NewFace.Common.Constants.USER_ROLE.ACTOR:
                 if (roleSpecificId != 0)
                 {
                     claims.Add(new Claim("ActorId", roleSpecificId.ToString()));
                 }
                 break;
-            case NewFace.Common.Constants.UserRole.Entertainment:
+            case NewFace.Common.Constants.USER_ROLE.ENTER:
                 if (roleSpecificId != 0)
                 {
                     claims.Add(new Claim("EnterId", roleSpecificId.ToString()));

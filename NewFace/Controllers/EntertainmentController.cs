@@ -8,7 +8,7 @@ using NewFace.Services.Interfaces;
 namespace NewFace.Controllers
 {
     // AuthenticateAndValidateEntertainment : model validation / user id, enter id 체크
-    [Authorize(Roles = NewFace.Common.Constants.UserRole.Entertainment)]
+    [Authorize(Roles = NewFace.Common.Constants.USER_ROLE.ENTER)]
     [AuthenticateAndValidateEntertainment]
     [Route("api/enter")]
     [ApiController]

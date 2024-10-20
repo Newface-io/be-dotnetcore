@@ -14,6 +14,7 @@ public class DataContext : DbContext
 
     #region user
     public DbSet<User> Users { get; set; }
+    public DbSet<UserAuth> UserAuth { get; set; }
     public DbSet<UserRole> UserRole { get; set; }
     public DbSet<UserFile> UserFile { get; set; }
     public DbSet<Term> Terms { get; set; }

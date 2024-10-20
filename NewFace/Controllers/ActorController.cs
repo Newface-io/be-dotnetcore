@@ -11,7 +11,7 @@ namespace NewFace.Controllers
 {
 
     // AuthenticateAndValidateActor : model validation / user id, actor id 체크
-    [Authorize(Roles = NewFace.Common.Constants.UserRole.Actor)]
+    [Authorize(Roles = NewFace.Common.Constants.USER_ROLE.ACTOR)]
     [Route("api/actor")]
     [AuthenticateAndValidateActor]
     [ApiController]
