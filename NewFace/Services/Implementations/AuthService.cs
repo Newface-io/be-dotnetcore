@@ -36,6 +36,10 @@ public class AuthService : IAuthService
     private readonly string _kakaoRedirectUri;
     private readonly string _kakaoAuthUrl;
 
+    private readonly string _naverClinetID;
+    private readonly string _naverClientSecret;
+    private readonly string _naverRedirectURI;
+
     public AuthService(DataContext context, ILogService logService, IDistributedCache cache, IHttpContextAccessor httpContextAccessor, IHttpClientFactory httpClientFactory)
     {
         _context = context;
@@ -49,6 +53,10 @@ public class AuthService : IAuthService
         _redisAccountSid = Environment.GetEnvironmentVariable("REDIS_ACCOUNT_SID") ?? string.Empty;
         _jwtAuthToken = Environment.GetEnvironmentVariable("REDIS_AUTH_TOKEN") ?? string.Empty;
         _jwtSendNumber = Environment.GetEnvironmentVariable("REDIS_SEND_NUMBER") ?? string.Empty;
+
+        _naverClinetID = Environment.GetEnvironmentVariable("NAVER_CLIENT_ID") ?? string.Empty;
+        _naverClientSecret = Environment.GetEnvironmentVariable("NAVER_CLIENT_SECRET") ?? string.Empty;
+        _naverRedirectURI = Environment.GetEnvironmentVariable("NAVER_REDIRECT_URI_LOCAL") ?? string.Empty;
 
         _kakaoClientId = Environment.GetEnvironmentVariable("KAKAO_CLIENT_ID") ?? string.Empty;
         _kakaoClientSecret = Environment.GetEnvironmentVariable("KAKAO_CLIENT_SECRET") ?? string.Empty;
@@ -114,6 +122,7 @@ public class AuthService : IAuthService
                 UserId = user.Id,
                 AuthKey = USER_AUTH.EMAIL,
                 AuthValue = passwordHash,
+                IsCompleted = true,
                 UpdatedDate = DateTime.Now,
             };
 
@@ -199,6 +208,34 @@ public class AuthService : IAuthService
                 return response;
             }
 
+            response = await GetSignInData(user);
+
+            return response;
+        }
+        catch (Exception ex)
+        {
+            response.Success = false;
+            response.Data = null;
+            response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
+            response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
+
+            _logService.LogError("EXCEPTION: SignIn", ex.Message, "ip: ");
+
+            return response;
+        }
+
+    }
+
+    #region naver
+
+    private async Task<ServiceResponse<SignInResponseDto>> GetSignInData(User user)
+    {
+        var response = new ServiceResponse<SignInResponseDto>();
+
+        var token = string.Empty;
+
+        try
+        {
             // 3. get role
             var userRole = user.UserRoles.FirstOrDefault()?.Role ?? string.Empty;
 
@@ -222,7 +259,7 @@ public class AuthService : IAuthService
                         .FirstOrDefaultAsync();
 
                     // 5. Generate JWT token
-                    token = GenerateJwtToken(user, userRole, response.Data.actorId??0);
+                    token = GenerateJwtToken(user, userRole, response.Data.actorId ?? 0);
 
                     break;
                 case NewFace.Common.Constants.USER_ROLE.ENTER:
@@ -232,11 +269,14 @@ public class AuthService : IAuthService
                         .FirstOrDefaultAsync();
 
                     // 5. Generate JWT token
-                    token = GenerateJwtToken(user, userRole, response.Data.enterId??0);
+                    token = GenerateJwtToken(user, userRole, response.Data.enterId ?? 0);
                     break;
-                default:
+                case NewFace.Common.Constants.USER_ROLE.COMMON:
                     // 5. Generate JWT token
                     token = GenerateJwtToken(user, userRole);
+                    break;
+                default:
+                    token = string.Empty;
                     break;
             }
 
@@ -251,13 +291,229 @@ public class AuthService : IAuthService
             response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
             response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
 
-            _logService.LogError("EXCEPTION: SignIn", ex.Message, "ip: ");
+            _logService.LogError("EXCEPTION: SetSignInData", ex.Message, "ip: ");
 
             return response;
         }
 
     }
 
+    public string GetNaverLoginUrl()
+    {
+        var clientId = _naverClinetID;
+        var redirectUri = _naverRedirectURI;
+        return $"https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id={clientId}&redirect_uri={redirectUri}";
+    }
+
+    public async Task<ServiceResponse<string>> GetNaverToken(string code)
+    {
+        var response = new ServiceResponse<string>();
+
+        try
+        {
+            using var client = _httpClientFactory.CreateClient();
+
+            var clientId = _naverClinetID;
+            var clientSecret = _naverClientSecret;
+            var redirectUri = _naverRedirectURI;
+
+            var responseFromNaver = await client.PostAsync($"https://nid.naver.com/oauth2.0/token?grant_type=authorization_code&client_id={clientId}&client_secret={clientSecret}&code={code}&redirect_uri={redirectUri}", null);
+
+            var content = await responseFromNaver.Content.ReadFromJsonAsync<JsonElement>();
+
+            if (content.GetProperty("access_token").GetString() != null)
+            {
+                response.Data = content.GetProperty("access_token").GetString();
+            }
+            else
+            {
+                response.Success = false;
+                response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
+            }
+
+            return response;
+        }
+        catch (Exception ex)
+        {
+            response.Success = false;
+            response.Data = null;
+            response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
+            response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
+
+            _logService.LogError("EXCEPTION: GetNaverToken", ex.Message, "ip: ");
+
+            return response;
+        }
+
+    }
+
+    public async Task<ServiceResponse<NaverUserInfoResponseDto>> GetNaverUserInfo(string accessToken)
+    {
+        var response = new ServiceResponse<NaverUserInfoResponseDto>();
+
+        try
+        {
+            using var client = _httpClientFactory.CreateClient();
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            var responseFromNaver = await client.GetFromJsonAsync<JsonElement>("https://openapi.naver.com/v1/nid/me");
+
+            if (responseFromNaver.TryGetProperty("response", out JsonElement userInfo))
+            {
+                response.Data = new NaverUserInfoResponseDto
+                {
+                    id = userInfo.GetProperty("id").GetString(),
+                    email = userInfo.GetProperty("email").GetString(),
+                    name = userInfo.GetProperty("name").GetString()
+                };
+
+            }
+            else
+            {
+                response.Success = false;
+                response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
+            }
+
+            return response;
+        }
+        catch (Exception ex)
+        {
+            response.Success = false;
+            response.Data = null;
+            response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
+            response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
+
+            _logService.LogError("EXCEPTION: GetNaverUserInfo", ex.Message, "ip: ");
+
+            return response;
+        }
+    }
+
+    public async Task<ServiceResponse<IsCompletedResponseDto>> IsCompleted(string id, string signinType)
+    {
+        var response = new ServiceResponse<IsCompletedResponseDto>();
+
+        try
+        {
+            var userAuth = await _context.UserAuth
+                                    .FirstOrDefaultAsync(ua => ua.AuthKey == signinType && ua.AuthValue == id);
+
+            if (userAuth == null)
+            {
+                var newUser = new User();
+
+                _context.Users.Add(newUser);
+                await _context.SaveChangesAsync();
+
+                userAuth = new UserAuth
+                {
+                    UserId = newUser.Id,
+                    AuthKey = signinType,
+                    AuthValue = id,
+                    IsCompleted = false
+                };
+
+                _context.UserAuth.Add(userAuth);
+                await _context.SaveChangesAsync();
+
+                response.Data = new IsCompletedResponseDto()
+                {
+                    id = id,
+                    loginType = signinType,
+                    isCompleted = false
+                };
+            }
+            else
+            {
+                response.Data = new IsCompletedResponseDto()
+                {
+                    id = id,
+                    loginType = signinType,
+                    isCompleted = userAuth.IsCompleted
+                };
+            }
+
+            return response;
+        }
+        catch (Exception ex)
+        {
+            response.Success = false;
+            response.Data = new IsCompletedResponseDto();
+            response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
+            response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
+
+            _logService.LogError("EXCEPTION: IsCompleted", ex.Message, "ip: ");
+
+            return response;
+        }
+    }
+
+    public async Task<ServiceResponse<SignInResponseDto>> SignInNaver(string id)
+    {
+        var response = new ServiceResponse<SignInResponseDto>();
+
+        try
+        {
+            var token = string.Empty;
+
+            var userAuth = await _context.UserAuth.FirstOrDefaultAsync(x => x.AuthValue == id);
+
+            // 0. check user auth
+            if (userAuth == null)
+            {
+                response.Success = false;
+                response.Data = null;
+                response.Code = MessageCode.Custom.NOT_REGISTERED_USER.ToString();
+                response.Message = MessageCode.CustomMessages[MessageCode.Custom.NOT_REGISTERED_USER];
+
+                return response;
+            }
+
+            var user = await _context.Users
+                            .Include(u => u.UserAuth)
+                            .Include(u => u.UserRoles)
+                            .FirstOrDefaultAsync(u => u.Id == userAuth.UserId);
+
+            // 1. check email
+            if (user == null)
+            {
+                response.Success = false;
+                response.Data = null;
+                response.Code = MessageCode.Custom.NOT_REGISTERED_USER.ToString();
+                response.Message = MessageCode.CustomMessages[MessageCode.Custom.NOT_REGISTERED_USER];
+
+                return response;
+            }
+            else if (user.IsDeleted)
+            {
+                response.Success = false;
+                response.Data = null;
+                response.Code = MessageCode.Custom.DELETED_USER.ToString();
+                response.Message = MessageCode.CustomMessages[MessageCode.Custom.DELETED_USER];
+
+                return response;
+            }
+
+            response = await GetSignInData(user);
+
+            return response;
+        }
+        catch (Exception ex)
+        {
+            response.Success = false;
+            response.Data = null;
+            response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
+            response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
+
+            _logService.LogError("EXCEPTION: SignIn", ex.Message, "ip: ");
+
+            return response;
+        }
+    }
+
+    #endregion
+
+    #region kakao
     public string GetKakaoLoginUrl()
     {
         return $"{_kakaoAuthUrl}?client_id={_kakaoClientId}&redirect_uri={_kakaoRedirectUri}&response_type=code";
@@ -327,7 +583,7 @@ public class AuthService : IAuthService
             return response;
         }
     }
-
+    #endregion
 
     public string CreateHashPassword(string password)
     {
@@ -473,7 +729,6 @@ public class AuthService : IAuthService
         }
     }
 
-
     public async Task<ServiceResponse<bool>> VerifyOTP(string phone, string inputOTP)
     {
         var response = new ServiceResponse<bool>();
@@ -525,6 +780,5 @@ public class AuthService : IAuthService
             return response;
         }
     }
-
 
 }

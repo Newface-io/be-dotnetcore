@@ -17,6 +17,8 @@ public class UserAuth
     public string AuthKey { get; set; } = string.Empty;
     [Required]
     public string AuthValue { get; set; } = string.Empty;
+    [Required]
+    public bool IsCompleted { get; set; } = false;  // 회원가입 완료 여부
 
     public DateTime UpdatedDate { get; set; } = DateTime.Now;
 

@@ -63,6 +63,63 @@ namespace NewFace.Controllers
             return Ok(token);
         }
 
+        [SwaggerOperation(Summary = "네이버 로그인")]
+        [HttpGet("naver/signin")]
+        public IActionResult NaverLogin()
+        {
+            var loginUrl = _authService.GetNaverLoginUrl();
+            return Ok(new { loginUrl });
+        }
+
+        [SwaggerOperation(Summary = "네이버 로그인(인증 후)")]
+        [HttpGet("naver/signin/callback")]
+        public async Task<IActionResult> NaverLoginCallback([FromQuery] string code)
+        {
+            var getTokenResponse = await _authService.GetNaverToken(code);
+
+            if (getTokenResponse.Success && getTokenResponse.Data != null)
+            {
+                var getUserInfo = await _authService.GetNaverUserInfo(getTokenResponse.Data);
+
+                if (getUserInfo.Success && getUserInfo.Data != null && getUserInfo.Data.id != null)
+                {
+                    var isCompletedResponse = await _authService.IsCompleted(getUserInfo.Data.id, USER_AUTH.NAVER);
+
+                    if (isCompletedResponse.Success && isCompletedResponse.Data != null)
+                    {
+                        // 1. get user info and token
+                        if (isCompletedResponse.Data.isCompleted)
+                        {
+                            var response = await _authService.SignInNaver(getUserInfo.Data.id);
+
+                            if (!response.Success)
+                            {
+                                return StatusCode(500, response);
+                            }
+
+                            return Ok(response);
+                        }
+                        // 2. response user info from Naver
+                        else
+                        {
+                            return Ok(isCompletedResponse);
+                        }
+                    }
+
+                    return StatusCode(500, isCompletedResponse);
+                }
+                else
+                {
+                    return StatusCode(500, getUserInfo);
+                }
+
+            }
+            else
+            {
+                return StatusCode(500, getTokenResponse);
+            }
+        }
+
 
         [SwaggerOperation(Summary = "회원가입 - 이메일")]
         [HttpPost]
