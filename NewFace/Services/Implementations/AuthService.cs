@@ -448,7 +448,7 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task<ServiceResponse<SignInResponseDto>> SignInNaver(string id)
+    public async Task<ServiceResponse<SignInResponseDto>> SignInWithExternalProvider(string id)
     {
         var response = new ServiceResponse<SignInResponseDto>();
 
@@ -505,7 +505,7 @@ public class AuthService : IAuthService
             response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
             response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
 
-            _logService.LogError("EXCEPTION: SignIn", ex.Message, "ip: ");
+            _logService.LogError("EXCEPTION: SignInWithExternalProvider", ex.Message, "ip: ");
 
             return response;
         }
@@ -519,28 +519,55 @@ public class AuthService : IAuthService
         return $"{_kakaoAuthUrl}?client_id={_kakaoClientId}&redirect_uri={_kakaoRedirectUri}&response_type=code";
     }
 
-    public async Task<string> GetKakaoToken(string code)
+    public async Task<ServiceResponse<string>> GetKakaoToken(string code)
     {
-        using var client = _httpClientFactory.CreateClient();
+        var result = new ServiceResponse<string>();
 
-        var response = await client.PostAsync("https://kauth.kakao.com/oauth/token",
-            new FormUrlEncodedContent(new Dictionary<string, string>
-            {
-            {"grant_type", "authorization_code"},
-            {"client_id", _kakaoClientId},
-            {"client_secret", _kakaoClientSecret}, // client_secret 추가
-            {"redirect_uri", _kakaoRedirectUri},
-            {"code", code}
-            }));
-
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            var errorContent = await response.Content.ReadAsStringAsync();
-            throw new HttpRequestException($"Kakao token request failed: {response.StatusCode}, {errorContent}");
+            using var client = _httpClientFactory.CreateClient();
+
+            var response = await client.PostAsync("https://kauth.kakao.com/oauth/token",
+                                new FormUrlEncodedContent(new Dictionary<string, string>
+                                {
+                                        {"grant_type", "authorization_code"},
+                                        {"client_id", _kakaoClientId},
+                                        {"client_secret", _kakaoClientSecret}, // client_secret 추가
+                                        {"redirect_uri", _kakaoRedirectUri},
+                                        {"code", code}
+                                }));
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+
+                result.Success = false;
+                result.Data = null;
+                result.Code = response.StatusCode.ToString();
+                result.Message = errorContent;
+
+                _logService.LogError("EXCEPTION: GetKakaoToken", errorContent, "ip: ");
+                
+            } else
+            {
+                var content = await response.Content.ReadFromJsonAsync<JsonElement>();
+                result.Data = content.GetProperty("access_token").GetString();
+            }
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            result.Success = false;
+            result.Data = null;
+            result.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
+            result.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
+
+            _logService.LogError("EXCEPTION: GetKakaoToken", ex.Message, "ip: ");
+
+            return result;
         }
 
-        var content = await response.Content.ReadFromJsonAsync<JsonElement>();
-        return content.GetProperty("access_token").GetString();
     }
 
     public async Task<ServiceResponse<KakaoUserInfoResponseDto>> GetKakaoUserInfo(string accessToken)

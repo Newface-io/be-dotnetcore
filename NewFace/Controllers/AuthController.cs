@@ -52,18 +52,49 @@ namespace NewFace.Controllers
         }
 
 
-        [SwaggerOperation(Summary = "로그인(토큰처리) - 카카오")]
+        [SwaggerOperation(Summary = "로그인 - 카카오 (인증 후)")]
         [HttpPost("signin/kakao/callback")]
         public async Task<IActionResult> SignInKakaoCallback([FromQuery] string code)
         {
-            var token = await _authService.GetKakaoToken(code);
-            var kakaoUserInfo = _authService.GetKakaoUserInfo(token);
+            var getTokenResponse = await _authService.GetKakaoToken(code);
 
-            // TO DO: 계정 만들었는지 체크하고 없으면 signup하고 아니면 로그인 처리
-            return Ok(token);
+            if (getTokenResponse.Success && getTokenResponse.Data != null)
+            {
+                var getKakaoUserInfo = await _authService.GetKakaoUserInfo(getTokenResponse.Data.ToString());
+
+                if (getKakaoUserInfo.Success && getKakaoUserInfo.Data != null && getKakaoUserInfo.Data.Id != null)
+                {
+                    var isCompletedResponse = await _authService.IsCompleted(getKakaoUserInfo.Data.Id.ToString(), USER_AUTH.KAKAO);
+
+                    if (isCompletedResponse.Success && isCompletedResponse.Data != null)
+                    {
+                        // 1. get user info and token
+                        if (isCompletedResponse.Data.isCompleted)
+                        {
+                            var response = await _authService.SignInWithExternalProvider(getKakaoUserInfo.Data.Id.ToString());
+
+                            if (!response.Success)
+                            {
+                                return StatusCode(500, response);
+                            }
+
+                            return Ok(response);
+                        }
+                        // 2. response user info from Naver
+                        else
+                        {
+                            return Ok(isCompletedResponse);
+                        }
+                    }
+
+                    return StatusCode(500, isCompletedResponse);
+                }
+            }
+
+            return Ok(new { string.Empty });
         }
 
-        [SwaggerOperation(Summary = "네이버 로그인")]
+        [SwaggerOperation(Summary = "로그인 - 네이버")]
         [HttpGet("naver/signin")]
         public IActionResult NaverLogin()
         {
@@ -71,7 +102,7 @@ namespace NewFace.Controllers
             return Ok(new { loginUrl });
         }
 
-        [SwaggerOperation(Summary = "네이버 로그인(인증 후)")]
+        [SwaggerOperation(Summary = "로그인 - 네이버 (인증 후)")]
         [HttpGet("naver/signin/callback")]
         public async Task<IActionResult> NaverLoginCallback([FromQuery] string code)
         {
@@ -90,7 +121,7 @@ namespace NewFace.Controllers
                         // 1. get user info and token
                         if (isCompletedResponse.Data.isCompleted)
                         {
-                            var response = await _authService.SignInNaver(getUserInfo.Data.id);
+                            var response = await _authService.SignInWithExternalProvider(getUserInfo.Data.id);
 
                             if (!response.Success)
                             {
