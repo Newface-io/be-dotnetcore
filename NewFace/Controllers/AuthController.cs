@@ -88,7 +88,7 @@ namespace NewFace.Controllers
         [SwaggerOperation(Summary = "핸드폰 OTP 번호 발송")]
         [HttpPost]
         [Route("send-otp")]
-        public async Task<IActionResult> SendOTP(int userId, string phone)
+        public async Task<IActionResult> SendOTP(string phone)
         {
 
             if (!ModelState.IsValid)
@@ -96,7 +96,7 @@ namespace NewFace.Controllers
                 return BadRequest(ModelState);
             }
 
-            var response = await _authService.SendOTP(userId, phone);
+            var response = await _authService.SendOTP(phone);
 
             if (!response.Success)
             {
@@ -111,14 +111,14 @@ namespace NewFace.Controllers
         [SwaggerOperation(Summary = "핸드폰 OTP 번호 확인")]
         [HttpPost]
         [Route("verify-otp")]
-        public async Task<IActionResult> VerifyOTP(int userId, string inputOTP)
+        public async Task<IActionResult> VerifyOTP(string phone, string inputOTP)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var response = await _authService.VerifyOTP(userId, inputOTP);
+            var response = await _authService.VerifyOTP(phone, inputOTP);
 
             if (!response.Success)
             {

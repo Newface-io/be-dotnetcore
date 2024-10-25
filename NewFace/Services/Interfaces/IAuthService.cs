@@ -15,7 +15,7 @@ public interface IAuthService
     string CreateHashPassword(string password);
     bool VerifyPassword(string enteredPassword, string storedHash);
     string GenerateJwtToken(User user, string role, int roleSpecificId = 0);
-    Task<ServiceResponse<int>> SendOTP(int userId, string phone);
-    Task<ServiceResponse<int>> VerifyOTP(int userId, string inputOTP);
+    Task<ServiceResponse<bool>> SendOTP(string phone);
+    Task<ServiceResponse<bool>> VerifyOTP(string phone, string inputOTP);
 
 }

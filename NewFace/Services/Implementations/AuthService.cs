@@ -409,9 +409,9 @@ public class AuthService : IAuthService
         return tokenHandler.WriteToken(token);
     }
 
-    public async Task<ServiceResponse<int>> SendOTP(int userId, string phone)
+    public async Task<ServiceResponse<bool>> SendOTP(string phone)
     {
-        var response = new ServiceResponse<int>();
+        var response = new ServiceResponse<bool>();
 
         try
         {
@@ -421,7 +421,7 @@ public class AuthService : IAuthService
 
             TwilioClient.Init(accountSid, authToken);
 
-            phone = Helpers.Common.FormatPhoneNumber(phone);
+            var formatPhone = Helpers.Common.FormatPhoneNumber(phone);
 
             Random random = new Random();
             string otp = random.Next(100000, 999999).ToString("D6");
@@ -429,7 +429,7 @@ public class AuthService : IAuthService
             var message = MessageResource.Create(
                 body: "[NewFace] 인증번호는 " + otp + " 입니다.",
                 from: new Twilio.Types.PhoneNumber(sendNumber),
-                to: new Twilio.Types.PhoneNumber(phone)
+                to: new Twilio.Types.PhoneNumber(formatPhone)
             );
 
             if (message.Status == MessageResource.StatusEnum.Queued ||
@@ -437,13 +437,13 @@ public class AuthService : IAuthService
                 message.Status == MessageResource.StatusEnum.Delivered)
             {
                 // save OTP on Redis
-                string cacheKey = $"OTP:{userId}";
+                string cacheKey = $"OTP:{phone}";
                 await _cache.SetStringAsync(cacheKey, otp, new DistributedCacheEntryOptions
                 {
                     AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1)
                 });
 
-                response.Data = userId;
+                response.Data = true;
                 response.Success = true;
 
                 return response;
@@ -451,7 +451,7 @@ public class AuthService : IAuthService
             else
             {
                 response.Success = false;
-                response.Data = 0;
+                response.Data = false;
                 response.Code = MessageCode.Custom.SMS_SEND_FAILED.ToString();
                 response.Message = MessageCode.CustomMessages[MessageCode.Custom.SMS_SEND_FAILED];
 
@@ -463,7 +463,7 @@ public class AuthService : IAuthService
         catch (Exception ex)
         {
             response.Success = false;
-            response.Data = 0;
+            response.Data = false;
             response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
             response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
 
@@ -474,19 +474,19 @@ public class AuthService : IAuthService
     }
 
 
-    public async Task<ServiceResponse<int>> VerifyOTP(int userId, string inputOTP)
+    public async Task<ServiceResponse<bool>> VerifyOTP(string phone, string inputOTP)
     {
-        var response = new ServiceResponse<int>();
+        var response = new ServiceResponse<bool>();
 
         try
         {
-            string cacheKey = $"OTP:{userId}";
+            string cacheKey = $"OTP:{phone}";
             string storedOTP = await _cache.GetStringAsync(cacheKey);
 
             if (string.IsNullOrEmpty(storedOTP))
             {
                 response.Success = false;
-                response.Data = 0;
+                response.Data = false;
                 response.Code = MessageCode.Custom.OTP_NOT_FOUND.ToString();
                 response.Message = MessageCode.CustomMessages[MessageCode.Custom.OTP_NOT_FOUND];
 
@@ -497,7 +497,7 @@ public class AuthService : IAuthService
             {
                 await _cache.RemoveAsync(cacheKey);
 
-                response.Data = userId;
+                response.Data = true;
                 response.Success = true;
 
                 return response;
@@ -505,7 +505,7 @@ public class AuthService : IAuthService
             else
             {
                 response.Success = false;
-                response.Data = 0;
+                response.Data = false;
                 response.Code = MessageCode.Custom.OTP_MISMATCH.ToString();
                 response.Message = MessageCode.CustomMessages[MessageCode.Custom.OTP_MISMATCH];
 
@@ -516,7 +516,7 @@ public class AuthService : IAuthService
         catch (Exception ex)
         {
             response.Success = false;
-            response.Data = 0;
+            response.Data = false;
             response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
             response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
 
