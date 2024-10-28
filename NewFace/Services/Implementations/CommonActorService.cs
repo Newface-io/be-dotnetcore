@@ -5,7 +5,7 @@ using NewFace.DTOs.Actor;
 using NewFace.DTOs.Home;
 using NewFace.Responses;
 
-namespace NewFace.Services.Implementations;
+namespace NewFace.Services;
 
 public class CommonActorService : ICommonActorService
 {
