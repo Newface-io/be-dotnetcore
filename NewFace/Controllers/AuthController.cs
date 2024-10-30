@@ -160,7 +160,7 @@ namespace NewFace.Controllers
             }
         }
 
-        [SwaggerOperation(Summary = "회원가입 - 간편 로그인 (카카오/네이버)")]
+        [SwaggerOperation(Summary = "회원가입 - 카카오 / 네이버 ")]
         [HttpPost]
         [Route("signup/external")]
         public async Task<IActionResult> SignUpWithExternalProvider([FromBody] SignUpWithExternalProviderRequestDto request)
