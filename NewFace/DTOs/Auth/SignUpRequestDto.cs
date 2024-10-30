@@ -29,7 +29,9 @@ public class SignUpEmailRequestDto
 
 public class SignUpWithExternalProviderRequestDto
 {
+    [Required(ErrorMessage = "Id is required.")]
     public string Id { get; set; }
+    [Required(ErrorMessage = "LoginType is required.")]
     [MaxLength(10)]
     public string LoginType { get; set; }
     [Required(ErrorMessage = "Name is required.")]

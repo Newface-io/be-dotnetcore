@@ -170,6 +170,10 @@ namespace NewFace.Controllers
                 return BadRequest(ModelState);
             }
 
+            request.LoginType = request.LoginType.Length > 1
+                            ? char.ToUpper(request.LoginType[0]) + request.LoginType.Substring(1).ToLower()
+                            : request.LoginType.ToUpper();
+
             var response = await _authService.SignUpWithExternalProvider(request);
 
             if (!response.Success)
