@@ -81,7 +81,74 @@ public class AuthService : IAuthService
         return null;
     }
 
-    public async Task<ServiceResponse<int>> SignUpEmail(SignUpRequestDto request)
+    public async Task<ServiceResponse<SignInResponseDto>> SignUpWithExternalProvider(SignUpWithExternalProviderRequestDto request)
+    {
+        var response = new ServiceResponse<SignInResponseDto>();
+
+        using var transaction = await _context.Database.BeginTransactionAsync();
+
+        try
+        {
+            var user = await _context.Users
+                .Include(u => u.UserAuth)
+                .Include(u => u.UserRoles)
+                .FirstOrDefaultAsync(u => u.UserAuth.AuthKey == request.LoginType && u.UserAuth.AuthValue == request.Id);
+
+            if (user == null || user.UserAuth == null)
+            {
+                response.Success = false;
+                response.Data = null;
+                response.Code = MessageCode.Custom.NOT_REGISTERED_USER.ToString();
+                response.Message = MessageCode.CustomMessages[MessageCode.Custom.NOT_REGISTERED_USER];
+
+                return response;
+            }
+
+            user.Name = request.Name;
+            user.Phone = request.Phone;
+
+            user.UserAuth.IsCompleted = true;
+
+            foreach (var termDto in request.TermsAgreements)
+            {
+                var term = new Term
+                {
+                    UserId = user.Id,
+                    Code = termDto.Code,
+                    Name = termDto.Name,
+                    IsAgreed = termDto.IsAgreed,
+                    LastUpdated = DateTime.Now
+                };
+                _context.Terms.Add(term);
+            }
+
+            await _context.SaveChangesAsync();
+
+            await transaction.CommitAsync();
+
+
+            var token = string.Empty;
+
+            response = await SignInWithExternalProvider(request.LoginType, request.Id);
+
+            return response;
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+
+            response.Success = false;
+            response.Data = new SignInResponseDto();
+            response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
+            response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
+
+            _logService.LogError("EXCEPTION: SignUp", ex.Message, "ip: ");
+
+            return response;
+        }
+    }
+
+    public async Task<ServiceResponse<int>> SignUpEmail(SignUpEmailRequestDto request)
     {
         var response = new ServiceResponse<int>();
 
@@ -448,7 +515,7 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task<ServiceResponse<SignInResponseDto>> SignInWithExternalProvider(string id)
+    public async Task<ServiceResponse<SignInResponseDto>> SignInWithExternalProvider(string loginType, string id)
     {
         var response = new ServiceResponse<SignInResponseDto>();
 
@@ -456,7 +523,7 @@ public class AuthService : IAuthService
         {
             var token = string.Empty;
 
-            var userAuth = await _context.UserAuth.FirstOrDefaultAsync(x => x.AuthValue == id);
+            var userAuth = await _context.UserAuth.FirstOrDefaultAsync(x => x.AuthKey == loginType && x.AuthValue == id);
 
             // 0. check user auth
             if (userAuth == null)

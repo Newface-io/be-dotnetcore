@@ -7,7 +7,8 @@ namespace NewFace.Services;
 public interface IAuthService
 {
     int? GetUserIdFromToken();
-    Task<ServiceResponse<int>> SignUpEmail(SignUpRequestDto request);
+    Task<ServiceResponse<SignInResponseDto>> SignUpWithExternalProvider(SignUpWithExternalProviderRequestDto request);
+    Task<ServiceResponse<int>> SignUpEmail(SignUpEmailRequestDto request);
     Task<ServiceResponse<SignInResponseDto>> SignInEmail(SignInRequestDto request);
 
     #region naver
@@ -23,7 +24,7 @@ public interface IAuthService
     Task<ServiceResponse<KakaoUserInfoResponseDto>> GetKakaoUserInfo(string accessToken);
     #endregion
 
-    Task<ServiceResponse<SignInResponseDto>> SignInWithExternalProvider(string id);
+    Task<ServiceResponse<SignInResponseDto>> SignInWithExternalProvider(string loginType, string id);
     Task<ServiceResponse<IsCompletedResponseDto>> IsCompleted(string id, string signinType); // only 간편 로그인
     string CreateHashPassword(string password);
     bool VerifyPassword(string enteredPassword, string storedHash);

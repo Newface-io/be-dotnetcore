@@ -43,12 +43,29 @@ namespace NewFace.Controllers
         }
 
 
-        [SwaggerOperation(Summary = "로그인 - 카카오")]
-        [HttpGet("signin/kakao")]
-        public IActionResult SignInKakao()
+        [SwaggerOperation(Summary = "로그인 - 카카오 / 네이버")]
+        [HttpGet("signin/{loginType}")]
+        public IActionResult SignIn(string loginType)
         {
-            var loginUrl = _authService.GetKakaoLoginUrl();
-            return Redirect(loginUrl);
+            string loginUrl;
+
+            string formattedLoginType = loginType.Length > 1
+                                        ? char.ToUpper(loginType[0]) + loginType.Substring(1).ToLower()
+                                        : loginType.ToUpper();
+
+            switch (formattedLoginType)
+            {
+                case USER_AUTH.KAKAO:
+                    loginUrl = _authService.GetKakaoLoginUrl();
+                    break;
+                case USER_AUTH.NAVER:
+                    loginUrl = _authService.GetNaverLoginUrl();
+                    break;
+                default:
+                    return BadRequest("지원하지 않는 로그인 타입입니다.");
+            }
+
+            return Ok(new { loginUrl });
         }
 
 
@@ -71,7 +88,7 @@ namespace NewFace.Controllers
                         // 1. get user info and token
                         if (isCompletedResponse.Data.isCompleted)
                         {
-                            var response = await _authService.SignInWithExternalProvider(getKakaoUserInfo.Data.Id.ToString());
+                            var response = await _authService.SignInWithExternalProvider(USER_AUTH.KAKAO, getKakaoUserInfo.Data.Id.ToString());
 
                             if (!response.Success)
                             {
@@ -94,14 +111,6 @@ namespace NewFace.Controllers
             return Ok(new { string.Empty });
         }
 
-        [SwaggerOperation(Summary = "로그인 - 네이버")]
-        [HttpGet("naver/signin")]
-        public IActionResult NaverLogin()
-        {
-            var loginUrl = _authService.GetNaverLoginUrl();
-            return Ok(new { loginUrl });
-        }
-
         [SwaggerOperation(Summary = "로그인 - 네이버 (인증 후)")]
         [HttpGet("naver/signin/callback")]
         public async Task<IActionResult> NaverLoginCallback([FromQuery] string code)
@@ -121,7 +130,7 @@ namespace NewFace.Controllers
                         // 1. get user info and token
                         if (isCompletedResponse.Data.isCompleted)
                         {
-                            var response = await _authService.SignInWithExternalProvider(getUserInfo.Data.id);
+                            var response = await _authService.SignInWithExternalProvider(USER_AUTH.NAVER, getUserInfo.Data.id);
 
                             if (!response.Success)
                             {
@@ -151,11 +160,30 @@ namespace NewFace.Controllers
             }
         }
 
+        [SwaggerOperation(Summary = "회원가입 - 간편 로그인 (카카오/네이버)")]
+        [HttpPost]
+        [Route("signup/external")]
+        public async Task<IActionResult> SignUpWithExternalProvider([FromBody] SignUpWithExternalProviderRequestDto request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var response = await _authService.SignUpWithExternalProvider(request);
+
+            if (!response.Success)
+            {
+                return StatusCode(500, response);
+            }
+
+            return Ok(response);
+        }
 
         [SwaggerOperation(Summary = "회원가입 - 이메일")]
         [HttpPost]
         [Route("signup")]
-        public async Task<IActionResult> SignUpEmail([FromBody] SignUpRequestDto request)
+        public async Task<IActionResult> SignUpEmail([FromBody] SignUpEmailRequestDto request)
         {
             if (!ModelState.IsValid)
             {
