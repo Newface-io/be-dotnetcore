@@ -343,7 +343,8 @@ public class AuthService : IAuthService
                     token = GenerateJwtToken(user, userRole);
                     break;
                 default:
-                    token = string.Empty;
+                    //token = string.Empty;
+                    token = GenerateJwtToken(user, userRole);
                     break;
             }
 
