@@ -3,16 +3,16 @@
 
 1. AWS EC2 빌드
 
-  0) cd be-dotnetcore
+      1.1 cd be-dotnetcore
+        
+      1.2 최신
+      git fetch origin
+      git pull origin master
     
-  1) 최신
-  git fetch origin
-  git pull origin master
-
-  2) env 추가/수정
-  nano .env
-  
-  3) docker build
-  docker-compose up --build
-
-
+      1.3 env 추가/수정
+      nano .env
+      
+      1.4 docker build
+      docker-compose up --build
+    
+    
