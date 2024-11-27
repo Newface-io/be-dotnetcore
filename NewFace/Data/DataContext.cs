@@ -12,6 +12,24 @@ public class DataContext : DbContext
 
     }
 
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<User>()
+            .HasOne(u => u.Actor)
+            .WithOne(m => m.User)
+            .HasForeignKey<Actor>(m => m.UserId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired(false);
+
+        modelBuilder.Entity<User>()
+            .HasOne(u => u.EntertainmentProfessional)
+            .WithOne(r => r.User)
+            .HasForeignKey<Entertainment>(r => r.UserId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired(false);
+    }
+
+
     #region user
     public DbSet<User> Users { get; set; }
     public DbSet<UserAuth> UserAuth { get; set; }

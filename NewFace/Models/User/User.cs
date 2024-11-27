@@ -42,7 +42,7 @@ public class User
     public ICollection<UserLike> Likes { get; set; } = new List<UserLike>();
     public virtual ICollection<Term> TermsAgreements { get; set; } = new HashSet<Term>();
     public virtual ICollection<UserFile> UserFiles { get; set; } = new HashSet<UserFile>();
-    public virtual Actor.Actor Actor { get; set; } = new Actor.Actor();
-    public virtual Entertainment.Entertainment EntertainmentProfessional { get; set; } = new Entertainment.Entertainment();
+    public virtual Actor.Actor? Actor { get; set; }
+    public virtual Entertainment.Entertainment? EntertainmentProfessional { get; set; }
 
 }
