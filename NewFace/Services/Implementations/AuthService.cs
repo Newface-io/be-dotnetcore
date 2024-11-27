@@ -56,11 +56,13 @@ public class AuthService : IAuthService
 
         _naverClinetID = Environment.GetEnvironmentVariable("NAVER_CLIENT_ID") ?? string.Empty;
         _naverClientSecret = Environment.GetEnvironmentVariable("NAVER_CLIENT_SECRET") ?? string.Empty;
-        _naverRedirectURI = Environment.GetEnvironmentVariable("NAVER_REDIRECT_URI_LOCAL") ?? string.Empty;
+        _naverRedirectURI = Environment.GetEnvironmentVariable("NAVER_REDIRECT_URI_QA") ?? string.Empty;
+        //_naverRedirectURI = Environment.GetEnvironmentVariable("NAVER_REDIRECT_URI_LOCAL") ?? string.Empty;
 
         _kakaoClientId = Environment.GetEnvironmentVariable("KAKAO_CLIENT_ID") ?? string.Empty;
         _kakaoClientSecret = Environment.GetEnvironmentVariable("KAKAO_CLIENT_SECRET") ?? string.Empty;
-        _kakaoRedirectUri = Environment.GetEnvironmentVariable("KAKAO_REDIRECT_URI_LOCAL") ?? string.Empty;
+        _kakaoRedirectUri = Environment.GetEnvironmentVariable("KAKAO_REDIRECT_URI_QA") ?? string.Empty;
+        //_kakaoRedirectUri = Environment.GetEnvironmentVariable("KAKAO_REDIRECT_URI_LOCAL") ?? string.Empty;
         _kakaoAuthUrl = Environment.GetEnvironmentVariable("KAKAO_AUTH_URL") ?? string.Empty;
     }
 

@@ -2,20 +2,17 @@
     - 솔루션 레벨에 추가
 
 1. AWS EC2 빌드
- 
-  1.1) 삭제
-  sudo rm -rf be-dotnetcore
-  
-  1.2) git clone
-  git clone https://github.com/Newface-io/be-dotnetcore.git
-  
-  1.3) 이동
-  cd be-dotnetcore
-  
-  1.4) env 추가
-  nano .env
-  
-  1.5) docker build
-  docker-compose up --build
 
-
+      1.1 cd be-dotnetcore
+        
+      1.2 최신
+      git fetch origin
+      git pull origin master
+    
+      1.3 env 추가/수정
+      nano .env
+      
+      1.4 docker build
+      docker-compose up --build
+    
+    
