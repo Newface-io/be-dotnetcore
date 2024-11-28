@@ -76,7 +76,12 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("CorsPolicy", policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "http://13.209.80.26:3000")
+        policy.WithOrigins("http://localhost:3000"
+                        , "http://13.209.80.26:3000"
+                        ,"http://demostar.co.kr"
+                        ,"https://demostar.co.kr"
+                        ,"http://www.demostar.co.kr"
+                        ,"https://www.demostar.co.kr")
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
