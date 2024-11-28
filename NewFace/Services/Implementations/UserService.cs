@@ -44,7 +44,8 @@ public class UserService : IUserService
                 return response;
             }
 
-            user.IsDeleted = true;
+            //user.IsDeleted = true;
+            _context.Users.Remove(user);
 
             await _context.SaveChangesAsync();
 
