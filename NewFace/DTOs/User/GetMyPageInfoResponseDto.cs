@@ -20,6 +20,7 @@ public class EnterMyPageInfoDto : IGetMyPageInfoResponseDto
     public string Email { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;
     public string ImageUrl { get; set; } = string.Empty;
+    public string CompanyName { get; set; } = string.Empty;
 }
 
 public class CommonMyPageInfoDto : IGetMyPageInfoResponseDto

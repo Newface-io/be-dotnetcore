@@ -275,7 +275,8 @@ public class UserService : IUserService
                         Name = enterUser.Name,
                         Email = enterUser.Email,
                         Phone = enterUser.Phone,
-                        ImageUrl = enterUser.PublicUrl
+                        ImageUrl = enterUser.PublicUrl,
+                        CompanyName = enterUser.EntertainmentProfessional.CompanyName
                     };
                     break;
 
