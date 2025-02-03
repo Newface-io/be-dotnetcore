@@ -112,10 +112,28 @@ namespace NewFace.Controllers
         public async Task<IActionResult> GetUserProfile()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            var roleClaim = User.FindFirst(ClaimTypes.Role);
+
+            if (userIdClaim == null || roleClaim == null)
+            {
+                return Unauthorized(new { message = "Invalid token" });
+            }
 
             var userId = int.Parse(userIdClaim.Value);
+            var userRole = roleClaim.Value;
 
-            var response = await _userService.GetUserInfoForEdit(userId);
+            int? roleSpecificId = null;
+
+            if (userRole == NewFace.Common.Constants.USER_ROLE.ACTOR)
+            {
+                roleSpecificId = User.FindFirst("ActorId")?.Value != null ? int.Parse(User.FindFirst("ActorId").Value) : null;
+            }
+            else if (userRole == NewFace.Common.Constants.USER_ROLE.ENTER)
+            {
+                roleSpecificId = User.FindFirst("EnterId")?.Value != null ? int.Parse(User.FindFirst("EnterId").Value) : null;
+            }
+
+            var response = await _userService.GetUserInfoForEdit(userId, userRole, roleSpecificId);
 
             if (!response.Success)
             {

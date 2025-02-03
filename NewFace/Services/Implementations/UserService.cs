@@ -318,9 +318,9 @@ public class UserService : IUserService
         return response;
     }
 
-    public async Task<ServiceResponse<GetUserInfoForEditResponseDto>> GetUserInfoForEdit(int userId)
+    public async Task<ServiceResponse<IGetUserInfoForEditResponseDto>> GetUserInfoForEdit(int userId, string role, int? roleSpecificId)
     {
-        var response = new ServiceResponse<GetUserInfoForEditResponseDto>();
+        var response = new ServiceResponse<IGetUserInfoForEditResponseDto>();
 
         try
         {
@@ -329,35 +329,82 @@ public class UserService : IUserService
 
             if (user == null)
             {
-                response.Success = false;
-                response.Code = MessageCode.Custom.NOT_FOUND_USER.ToString();
-                response.Message = MessageCode.CustomMessages[MessageCode.Custom.NOT_FOUND_USER];
-                return response;
+                return new ServiceResponse<IGetUserInfoForEditResponseDto>
+                {
+                    Success = false,
+                    Code = MessageCode.Custom.NOT_FOUND_USER.ToString(),
+                    Message = MessageCode.CustomMessages[MessageCode.Custom.NOT_FOUND_USER]
+                };
             }
 
-            var userProfileDto = new GetUserInfoForEditResponseDto
+            var entertainment = (role == NewFace.Common.Constants.USER_ROLE.ENTER && roleSpecificId.HasValue)
+                ? await _context.Entertainments.FirstOrDefaultAsync(e => e.Id == roleSpecificId.Value)
+                : null;
+
+            if (role == NewFace.Common.Constants.USER_ROLE.ENTER && entertainment == null)
             {
-                Name = user.Name,
-                BirthDate = user.BirthDate,
-                Gender = user.Gender,
-                Phone = user.Phone,
-                Email = user.Email
+                return new ServiceResponse<IGetUserInfoForEditResponseDto>
+                {
+                    Success = false,
+                    Code = MessageCode.Custom.NOT_FOUND_USER.ToString(),
+                    Message = MessageCode.CustomMessages[MessageCode.Custom.NOT_FOUND_USER]
+                };
+            }
+
+            IGetUserInfoForEditResponseDto userProfileDto = role switch
+            {
+                NewFace.Common.Constants.USER_ROLE.ACTOR => new ActorUserInfoForEditDto
+                {
+                    Name = user.Name,
+                    BirthDate = user.BirthDate,
+                    Gender = user.Gender,
+                    Phone = user.Phone,
+                    Email = user.Email
+                },
+                NewFace.Common.Constants.USER_ROLE.ENTER when entertainment != null => new EnterUserInfoForEditDto
+                {
+                    Name = user.Name,
+                    BirthDate = user.BirthDate,
+                    Gender = user.Gender,
+                    Phone = user.Phone,
+                    Email = user.Email,
+                    CompanyName = entertainment.CompanyName,
+                    CeoName = entertainment.CeoName,
+                    CompanyAddress = entertainment.CompanyAddress,
+                    BusinessCardImagePublicUrl = string.Empty,
+                    BusinessLicenseImagePublicUrl = string.Empty,
+                },
+                _ => new CommonUserInfoForEditDto
+                {
+                    Name = user.Name,
+                    BirthDate = user.BirthDate,
+                    Gender = user.Gender,
+                    Phone = user.Phone,
+                    Email = user.Email
+                }
             };
 
             response.Success = true;
             response.Data = userProfileDto;
+
         }
         catch (Exception ex)
         {
-            response.Success = false;
-            response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
-            response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
+            response = new ServiceResponse<IGetUserInfoForEditResponseDto>
+            {
+                Success = false,
+                Code = MessageCode.Custom.UNKNOWN_ERROR.ToString(),
+                Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR]
+            };
 
-            _logService.LogError("EXCEPTION: GetUserProfile", ex.Message, $"user id: {userId}");
+            _logService.LogError("EXCEPTION: GetUserProfile", $"{ex.Message}\n{ex.StackTrace}", $"user id: {userId}");
         }
 
         return response;
     }
+
+
+
 
     public async Task<ServiceResponse<bool>> UpdateUserInfoForEdit(int userId, UpdateUserInfoForEditResponseDto model)
     {
