@@ -5,5 +5,5 @@ namespace NewFace.Services.Interfaces;
 
 public interface IEntertainmentService
 {
-    Task<ServiceResponse<int>> AddEntertainmentProfile(AddEntertainmentProfileRequestDto model);
+    Task<ServiceResponse<int>> UpdateEntertainmentProfile(UpdateEntertainmentProfileRequestDto model);
 }

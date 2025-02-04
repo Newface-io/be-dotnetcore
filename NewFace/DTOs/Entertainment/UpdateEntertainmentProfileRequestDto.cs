@@ -2,7 +2,7 @@
 
 namespace NewFace.DTOs.Actor;
 
-public class AddEntertainmentProfileRequestDto
+public class UpdateEntertainmentProfileRequestDto
 {
     public int UserId { get; set; }
 
@@ -34,4 +34,7 @@ public class AddEntertainmentProfileRequestDto
 
     [StringLength(100)]
     public string ContactPosition { get; set; } = string.Empty;
+    public IFormFile? BusinessLicenseImage { get; set; }
+    public IFormFile? BusinessCardImage { get; set; }
+    public bool isUpdatedImage { get; set; } = false;
 }

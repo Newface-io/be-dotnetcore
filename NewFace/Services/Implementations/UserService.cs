@@ -371,8 +371,8 @@ public class UserService : IUserService
                     CompanyName = entertainment.CompanyName,
                     CeoName = entertainment.CeoName,
                     CompanyAddress = entertainment.CompanyAddress,
-                    BusinessCardImagePublicUrl = string.Empty,
-                    BusinessLicenseImagePublicUrl = string.Empty,
+                    BusinessLicenseImagePublicUrl = entertainment.BusinessLicenseImagePublicUrl,
+                    BusinessCardImagePublicUrl = entertainment.BusinessCardImagePublicUrl,
                 },
                 _ => new CommonUserInfoForEditDto
                 {

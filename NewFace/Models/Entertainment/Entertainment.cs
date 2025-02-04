@@ -43,4 +43,6 @@ public class Entertainment
 
     [StringLength(100)]
     public string ContactPosition { get; set; } = string.Empty;
+    public string BusinessLicenseImagePublicUrl { get; set; } = string.Empty;
+    public string BusinessCardImagePublicUrl { get; set; } = string.Empty;
 }

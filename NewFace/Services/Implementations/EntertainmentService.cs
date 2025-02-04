@@ -1,9 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
-using NewFace.Common.Constants;
+﻿using NewFace.Common.Constants;
 using NewFace.Data;
 using NewFace.DTOs.Actor;
-using NewFace.Models;
-using NewFace.Models.Entertainment;
 using NewFace.Responses;
 using NewFace.Services.Interfaces;
 
@@ -14,11 +11,13 @@ public class EntertainmentService : IEntertainmentService
 
     private readonly DataContext _context;
     private readonly ILogService _logService;
+    private readonly IFileService _fileService;
 
-    public EntertainmentService(DataContext context, ILogService logService)
+    public EntertainmentService(DataContext context, ILogService logService, IFileService fileService)
     {
         _context = context;
         _logService = logService;
+        _fileService = fileService;
     }
 
     public string CompanyType { get; set; } = string.Empty;
@@ -35,13 +34,17 @@ public class EntertainmentService : IEntertainmentService
     public string ContactDepartment { get; set; } = string.Empty;
     public string ContactPosition { get; set; } = string.Empty;
 
-    public async Task<ServiceResponse<int>> AddEntertainmentProfile(AddEntertainmentProfileRequestDto model)
+    public async Task<ServiceResponse<int>> UpdateEntertainmentProfile(UpdateEntertainmentProfileRequestDto model)
     {
         var response = new ServiceResponse<int>();
 
+        using var transaction = await _context.Database.BeginTransactionAsync();
+
         try
         {
-            if (!await _context.Users.AnyAsync(u => u.Id == model.UserId))
+            var enterUser = await _context.Entertainments.Where(e => e.UserId == model.UserId).FirstOrDefaultAsync();
+
+            if (enterUser == null || !await _context.Users.AnyAsync(u => u.Id == model.UserId))
             {
                 response.Success = false;
                 response.Data = 0;
@@ -51,25 +54,68 @@ public class EntertainmentService : IEntertainmentService
                 return response;
             }
 
-            var entertainment = new Entertainment
-            {
-                UserId = model.UserId,
-                CompanyType = model.CompanyType,
-                CompanyName = model.CompanyName,
-                CeoName = model.CeoName,
-                CompanyAddress = model.CompanyAddress,
-                ContactName = model.ContactName,
-                ContactPhone = model.ContactPhone,
-                ContactEmail = model.ContactEmail,
-                ContactDepartment = model.ContactDepartment,
-                ContactPosition = model.ContactPosition,
-            };
+            enterUser.CompanyType = model.CompanyType;
+            enterUser.CompanyName = model.CompanyName;
+            enterUser.CeoName = model.CeoName;
+            enterUser.CompanyAddress = model.CompanyAddress;
+            enterUser.ContactName = model.ContactName;
+            enterUser.ContactPhone = model.ContactPhone;
+            enterUser.ContactEmail = model.ContactEmail;
+            enterUser.ContactDepartment = model.ContactDepartment;
+            enterUser.ContactPosition = model.ContactPosition;
 
-            await _context.Entertainments.AddAsync(entertainment);
+            if (model.isUpdatedImage)
+            {
+                var folderPath = $"User/Image/Enter/{model.UserId}";
+
+                if (model.BusinessLicenseImage != null)
+                {
+                    var uploadResult = await _fileService.UploadFile(model.BusinessLicenseImage, folderPath);
+
+                    if (!uploadResult.Success)
+                    {
+                        await transaction.RollbackAsync();
+
+                        _logService.LogError("ERROR: UpdateEntertainmentProfile", "storage upload error", $"Error uploading images for userId: {model.UserId}");
+                        response.Success = false;
+                        response.Code = MessageCode.Custom.FAILED_FILE_UPLOAD.ToString();
+                        response.Message = MessageCode.CustomMessages[MessageCode.Custom.FAILED_FILE_UPLOAD];
+
+                        return response;
+                    }
+
+                    var (storagePath, publicUrl) = (uploadResult.Data.S3Path, uploadResult.Data.CloudFrontUrl);
+
+                    enterUser.BusinessLicenseImagePublicUrl = publicUrl;
+                }
+
+                if (model.BusinessCardImage != null)
+                {
+                    var uploadResult = await _fileService.UploadFile(model.BusinessCardImage, folderPath);
+
+                    if (!uploadResult.Success)
+                    {
+                        await transaction.RollbackAsync();
+
+                        _logService.LogError("ERROR: UpdateEntertainmentProfile", "storage upload error", $"Error uploading images for userId: {model.UserId}");
+                        response.Success = false;
+                        response.Code = MessageCode.Custom.FAILED_FILE_UPLOAD.ToString();
+                        response.Message = MessageCode.CustomMessages[MessageCode.Custom.FAILED_FILE_UPLOAD];
+
+                        return response;
+                    }
+
+                    var (storagePath, publicUrl) = (uploadResult.Data.S3Path, uploadResult.Data.CloudFrontUrl);
+
+                    enterUser.BusinessCardImagePublicUrl = publicUrl;
+                }
+            }
+
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
 
             response.Success = true;
-            response.Data = entertainment.Id;
+            response.Data = enterUser.Id;
             return response;
         }
         catch (Exception ex)
@@ -78,7 +124,7 @@ public class EntertainmentService : IEntertainmentService
             response.Code = MessageCode.Custom.UNKNOWN_ERROR.ToString();
             response.Message = MessageCode.CustomMessages[MessageCode.Custom.UNKNOWN_ERROR];
 
-            _logService.LogError("EXCEPTION", ex.Message, "user id: " + model.UserId);
+            _logService.LogError("EXCEPTION: UpdateEntertainmentProfile", ex.Message, "user id: " + model.UserId);
 
             return response;
         }
